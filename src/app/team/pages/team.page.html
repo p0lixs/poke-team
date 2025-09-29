@@ -1,0 +1,23 @@
+<div class="layout">
+    <section>
+        <app-search-box (valueChange)="facade.query.set($event)"></app-search-box>
+        @if(facade.results().length > 0){
+        <app-results-list [results]="facade.results()" (add)="facade.addToTeam($event)" />
+        }
+        @if(facade.loading()){
+        <div class="muted" style="margin:.75rem 0">Buscando...</div>
+        }
+        @if(facade.error()){
+        <div style="color:red">{{ facade.error() }}</div>
+        }
+        <app-results-list [results]="facade.results()" (add)="facade.addToTeam($event)" />
+        @if(!facade.loading() && facade.results().length === 0){
+        <p class="muted">
+            Escribe al menos 2 letras para buscar.
+        </p>
+        }
+    </section>
+    <aside>
+        <app-team-panel [team]="facade.team()" (remove)="facade.removeFromTeam($event)" (clear)="facade.clearTeam()" />
+    </aside>
+</div>
