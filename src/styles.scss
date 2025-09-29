@@ -1,1 +1,36 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, Arial, sans-serif;
+  --font-head: "Rubik", "Inter", system-ui, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* escala rápida (ajusta a tu gusto) */
+  --fs-1: clamp(0.875rem, .8vw + .7rem, 1rem);   /* body */
+  --fs-2: clamp(1rem, 1vw + .8rem, 1.125rem);    /* card title */
+  --fs-3: clamp(1.125rem, 1.2vw + .9rem, 1.35rem); /* section title */
+}
+
+html, body {
+  font-family: var(--font-ui);
+  font-size: var(--fs-1);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .heading {
+  font-family: var(--font-head);
+  letter-spacing: .2px;
+}
+
+.code, .mono, .stat, .id {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1, "lnum" 1; /* números tabulares y alineados */
+}
+
+/* Ejemplos rápidos para tus componentes */
+// .team-header h2 { font-size: var(--fs-3); }
+// .pokemon-card .name { font-size: var(--fs-2); text-transform: capitalize; }
+// .results .name { font-weight: 600; }
+
+/* Accesibilidad: asegura contraste en chips de tipo si usas color */
+.type-icon img { filter: drop-shadow(0 1px 0 rgba(0,0,0,.08)); }

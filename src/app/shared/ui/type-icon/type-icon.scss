@@ -1,0 +1,24 @@
+.type-icons {
+  --icon-size: 24;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.type-icon {
+  width: calc(var(--icon-size) * 1px);
+  height: calc(var(--icon-size) * 1px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100px;
+    height: 20px;
+    object-fit: contain;
+    display: block;
+  }
+}

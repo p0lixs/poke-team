@@ -1,0 +1,16 @@
+<div class="team-panel">
+  <div class="team-header">
+    <h2>Tu equipo</h2>
+    <button class="btn-clear" type="button" (click)="clear.emit()" [disabled]="!team.length">Limpiar</button>
+  </div>
+
+  @if (team.length) {
+    <div class="team-grid">
+      @for (p of team; track trackById($index, p)) {
+        <app-pokemon [pokemon]="p" (remove)="remove.emit($event)"></app-pokemon>
+      }
+    </div>
+  } @else {
+    <p class="muted">Aún no has añadido ningún Pokémon.</p>
+  }
+</div>

@@ -1,0 +1,79 @@
+/* Tarjeta flexible, 100% del ancho que le dé el contenedor flex */
+.pokemon-card {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: .75rem;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: .75rem;
+  background: #fff;
+  height: 100%;            /* para igualar alturas entre columnas */
+}
+
+/* Cabecera con imagen + título adaptables */
+.head {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;            /* permite truncado de texto si hace falta */
+}
+
+.sprite {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.types {
+  display: flex;
+  flex-wrap: wrap;         /* chips a varias líneas si hace falta */
+  gap: .375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  .type-icon{
+    img{
+      width: 100px;
+      height: 20px;
+    }
+  }
+}
+
+/* Footer pegado abajo para acciones consistentes */
+.actions {
+  margin-top: auto;        /* empuja el footer al fondo */
+  display: flex;
+  justify-content: flex-end;
+
+  .btn-remove {
+    appearance: none;
+    border: 0;
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+    padding: .35rem .6rem;
+    border-radius: .5rem;
+    cursor: pointer;
+
+    &:hover { background: #fecaca; }
+  }
+}

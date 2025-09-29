@@ -10,6 +10,9 @@ export class PokemonMapper {
       name: dto.name,
       sprite: dto.sprites.front_default,
       types: dto.types.sort((a, b) => a.slot - b.slot).map((t) => t.type.name),
+      typeDetails: dto.types
+        .sort((a, b) => a.slot - b.slot)
+        .map((t) => ({ name: t.type.name, url: t.type.url })),
     };
   }
 }

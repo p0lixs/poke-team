@@ -3,4 +3,5 @@ export interface PokemonVM {
   name: string;
   sprite: string | null;
   types: string[];
+  typeDetails: { name: string; url: string }[];
 }

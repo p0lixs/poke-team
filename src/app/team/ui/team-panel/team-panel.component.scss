@@ -1,0 +1,48 @@
+.team-panel {
+  display: grid;
+  gap: .75rem;
+}
+
+.team-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h2 { margin: 0; font-size: 1.1rem; }
+
+  .btn-clear {
+    appearance: none;
+    border: 0;
+    background: #e5e7eb;
+    color: #111827;
+    font-weight: 600;
+    padding: .35rem .6rem;
+    border-radius: .5rem;
+    cursor: pointer;
+
+    &:hover { background: #d1d5db; }
+    &:disabled { opacity: .5; cursor: default; }
+  }
+}
+
+/* ⚡️ Flex + wrap para las cartas del equipo */
+.team-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3rem 1rem;
+
+  /* cada tarjeta intenta medir ~240–320px pero fluye */
+  > app-pokemon {
+    flex: 1 1 240px;   /* grow | shrink | basis */
+    max-width: 100%;
+    min-width: 200px;  /* evita tarjetas demasiado estrechas */
+  }
+}
+
+/* Opcional: afinar saltos */
+@media (min-width: 480px) {
+  .team-grid > app-pokemon { flex-basis: 240px; }
+}
+@media (min-width: 860px) {
+  .team-grid > app-pokemon { flex-basis: 300px; }
+}

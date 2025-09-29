@@ -1,0 +1,7 @@
+<ul class="type-icons" [style.--icon-size.px]="size">
+  @for (t of typeDetails; track trackByUrl($index, t)) {
+    <li class="type-icon">
+      <img [src]="(icon$(t.url) | async) ?? ''" [alt]="t.name" [title]="t.name" />
+    </li>
+  }
+</ul>

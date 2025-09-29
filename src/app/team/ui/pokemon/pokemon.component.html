@@ -1,0 +1,31 @@
+<article class="pokemon-card">
+  <header class="head">
+    <img
+      class="sprite"
+      [src]="pokemon.sprite || 'assets/placeholder-poke.png'"
+      [alt]="pokemon.name"
+      loading="lazy"
+      referrerpolicy="no-referrer"
+    />
+    <div class="title">
+      <h3 class="name">{{ pokemon.name }}</h3>
+      <!-- pokemon.component.html (sustituye la parte de tipos) -->
+      @if (pokemon['typeDetails'].length) {
+      <app-type-icon [typeDetails]="pokemon.typeDetails" [size]="20"></app-type-icon>
+      } @else if (pokemon.types.length) {
+      <!-- Fallback por si aún no tienes typeDetails -->
+      <ul class="types">
+        @for (name of pokemon.types; track $index) {
+        <li class="type-pill">{{ name }}</li>
+        }
+      </ul>
+      }
+    </div>
+  </header>
+
+  <footer class="actions">
+    @if (showRemove) {
+    <button type="button" class="btn-remove" (click)="onRemove()">Quitar</button>
+    }
+  </footer>
+</article>
