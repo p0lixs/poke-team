@@ -56,4 +56,13 @@ export class PokemonComponent {
     const percentage = (stat.value / maxStatValue) * 100;
     return Math.min(100, Math.round(percentage));
   }
+
+  getStatGradient(stat: PokemonStatVM): string {
+    const percentage = this.getStatPercentage(stat);
+    const hue = Math.round((percentage / 100) * 240);
+    const startColor = `hsl(${hue}, 85%, 55%)`;
+    const endColor = `hsl(${hue}, 85%, 45%)`;
+
+    return `linear-gradient(90deg, ${startColor} 0%, ${endColor} 100%)`;
+  }
 }
