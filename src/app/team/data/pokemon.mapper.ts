@@ -1,15 +1,7 @@
 import { Injectable } from '@angular/core';
+import { STAT_LABELS } from '../../shared/util/constants';
 import { PokemonDTO } from '../models/pokeapi.dto';
 import { PokemonVM } from '../models/view.model';
-
-const STAT_LABELS: Record<string, string> = {
-  hp: 'Vida',
-  attack: 'Ataque',
-  defense: 'Defensa',
-  'special-attack': 'Ataque especial',
-  'special-defense': 'Defensa especial',
-  speed: 'Velocidad',
-};
 
 @Injectable({ providedIn: 'root' })
 export class PokemonMapper {
@@ -22,11 +14,12 @@ export class PokemonMapper {
       typeDetails: dto.types
         .sort((a, b) => a.slot - b.slot)
         .map((t) => ({ name: t.type.name, url: t.type.url })),
-      stats: dto.stats?.map((stat) => ({
-        name: stat.stat.name,
-        label: STAT_LABELS[stat.stat.name] ?? this.toTitleCase(stat.stat.name.replace(/-/g, ' ')),
-        value: stat.base_stat,
-      })) ?? [],
+      stats:
+        dto.stats?.map((stat) => ({
+          name: stat.stat.name,
+          label: STAT_LABELS[stat.stat.name] ?? this.toTitleCase(stat.stat.name.replace(/-/g, ' ')),
+          value: stat.base_stat,
+        })) ?? [],
     };
   }
 

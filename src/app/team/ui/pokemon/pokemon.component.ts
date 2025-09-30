@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
-import { PokemonStatVM, PokemonVM } from '../../models/view.model';
-import { TypeIconService } from '../../data/type-icon.service';
 import { TypeIcon } from '../../../shared/ui/type-icon/type-icon';
+import { STAT_MAX_VALUES } from '../../../shared/util/constants';
+import { TypeIconService } from '../../data/type-icon.service';
+import { PokemonStatVM, PokemonVM } from '../../models/view.model';
 
 @Component({
   selector: 'app-pokemon',
@@ -12,14 +13,6 @@ import { TypeIcon } from '../../../shared/ui/type-icon/type-icon';
 })
 export class PokemonComponent {
   private _pokemon!: PokemonVM;
-  private static readonly STAT_MAX_VALUES: Record<string, number> = {
-    hp: 255,
-    attack: 190,
-    defense: 250,
-    'special-attack': 194,
-    'special-defense': 250,
-    speed: 200,
-  };
 
   @Input() set pokemon(value: PokemonVM) {
     this._pokemon = {
@@ -40,14 +33,16 @@ export class PokemonComponent {
     this.remove.emit(this.pokemon.id);
   }
 
-  trackType(i: number, t: any) { return t?.name ?? i; }
+  trackType(i: number, t: any) {
+    return t?.name ?? i;
+  }
 
   icon$(url: string) {
     return this.typeIcons.getIconByTypeUrl(url);
   }
 
   getStatPercentage(stat: PokemonStatVM): number {
-    const maxStatValue = PokemonComponent.STAT_MAX_VALUES[stat.name] ?? 0;
+    const maxStatValue = STAT_MAX_VALUES[stat.name] ?? 0;
 
     if (!maxStatValue) {
       return 0;
