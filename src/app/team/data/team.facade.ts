@@ -3,8 +3,9 @@ import { PokemonApi } from './pokemon.api';
 import { PokemonMapper } from './pokemon.mapper';
 import { PokemonVM } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, filter, map, switchMap, take, tap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
 import { storage } from '../../shared/util/storage.util';
+import { PokemonDTO } from '../models/pokeapi.dto';
 
 const TEAM_KEY = 'poketeams.team';
 const MAX_TEAM = 6;
@@ -62,15 +63,15 @@ export class TeamFacade {
         filter((q) => q.length >= 2),
         switchMap((q) => {
           const candidates = this.filteredNames();
-          if (!candidates.length) return [] as any;
+          if (!candidates.length) return of<PokemonDTO[]>([]);
           // fetch details for up to 20 matches in parallel
-          return Promise.all(
-            candidates.map((name) => this.api.getPokemonByName(name).pipe(take(1)).toPromise())
+          return forkJoin(
+            candidates.map((name) => this.api.getPokemonByName(name).pipe(take(1)))
           );
         })
       )
       .subscribe({
-        next: (dtos: any) => {
+        next: (dtos: PokemonDTO[]) => {
           const list = Array.isArray(dtos) ? dtos.map(this.mapper.toVM) : [];
           this.results.set(list);
           this.loading.set(false);
