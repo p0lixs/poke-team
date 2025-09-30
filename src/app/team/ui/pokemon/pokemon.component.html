@@ -34,6 +34,7 @@
           <div
             class="stats__bar-fill"
             [style.width.%]="getStatPercentage(stat)"
+            [style.background]="getStatGradient(stat)"
           ></div>
         </div>
         <span class="stats__value">{{ stat.value }}</span>
