@@ -3,7 +3,7 @@ import { PokemonApi } from './pokemon.api';
 import { PokemonMapper } from './pokemon.mapper';
 import { PokemonVM } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, filter, map, switchMap, take, tap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, map, of, switchMap, take, tap } from 'rxjs';
 import { storage } from '../../shared/util/storage.util';
 
 const TEAM_KEY = 'poketeams.team';
@@ -62,7 +62,7 @@ export class TeamFacade {
         filter((q) => q.length >= 2),
         switchMap((q) => {
           const candidates = this.filteredNames();
-          if (!candidates.length) return [] as any;
+          if (!candidates.length) return of([]);
           // fetch details for up to 20 matches in parallel
           return Promise.all(
             candidates.map((name) => this.api.getPokemonByName(name).pipe(take(1)).toPromise())
