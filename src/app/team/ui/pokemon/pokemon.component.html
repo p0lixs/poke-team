@@ -23,6 +23,26 @@
     </div>
   </header>
 
+  @if (pokemon.stats.length) {
+  <section class="stats">
+    <h4 class="stats__title">Estadísticas</h4>
+    <ul class="stats__list">
+      @for (stat of pokemon.stats; track stat.name) {
+      <li class="stats__item">
+        <span class="stats__label">{{ stat.label }}</span>
+        <div class="stats__bar">
+          <div
+            class="stats__bar-fill"
+            [style.width.%]="getStatPercentage(stat.value)"
+          ></div>
+        </div>
+        <span class="stats__value">{{ stat.value }}</span>
+      </li>
+      }
+    </ul>
+  </section>
+  }
+
   <footer class="actions">
     @if (showRemove) {
     <button type="button" class="btn-remove" (click)="onRemove()">Quitar</button>
