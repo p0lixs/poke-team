@@ -1,5 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { NgFor, NgIf } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { PokemonVM } from '../../models/view.model';
 import { PokemonComponent } from '../pokemon/pokemon.component';
 
