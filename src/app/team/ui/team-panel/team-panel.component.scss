@@ -3,6 +3,59 @@
   gap: .75rem;
 }
 
+.team-controls {
+  display: grid;
+  gap: .5rem;
+  padding: .75rem;
+  background: #f9fafb;
+  border-radius: .75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.control {
+  display: grid;
+  gap: .25rem;
+  font-size: .85rem;
+
+  span {
+    color: #4b5563;
+    font-weight: 600;
+  }
+
+  select,
+  input {
+    appearance: none;
+    border: 1px solid #d1d5db;
+    border-radius: .5rem;
+    padding: .45rem .6rem;
+    font-size: .95rem;
+    background: #fff;
+  }
+}
+
+.btn-save {
+  justify-self: start;
+  appearance: none;
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  padding: .45rem .9rem;
+  border-radius: .5rem;
+  cursor: pointer;
+
+  &:hover { background: #1d4ed8; }
+  &:disabled {
+    opacity: .6;
+    cursor: default;
+  }
+}
+
+.autosave-note {
+  margin: 0;
+  font-size: .8rem;
+}
+
 .team-header {
   display: flex;
   align-items: center;
