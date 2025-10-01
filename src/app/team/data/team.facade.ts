@@ -6,6 +6,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
 import { PokemonDTO } from '../models/pokeapi.dto';
 import { TeamRepository } from './team.repository';
+import { SavedTeam } from '../models/team.model';
 
 const MAX_TEAM = 6;
 
@@ -15,7 +16,11 @@ export class TeamFacade {
   private mapper = inject(PokemonMapper);
   private repository = inject(TeamRepository);
   private readonly teamLoaded = signal(false);
-  private readonly lastSynced = signal<string | null>(null);
+  private readonly lastSynced = signal<Map<string, string>>(new Map());
+  private readonly newTeamDraft = signal<{ name: string; members: PokemonVM[] }>({
+    name: 'Nuevo equipo',
+    members: [],
+  });
 
   // --- Search state ---
   readonly query: WritableSignal<string> = signal('');
@@ -34,7 +39,12 @@ export class TeamFacade {
 
   // --- Team state ---
   readonly team = signal<PokemonVM[]>([]);
+  readonly teamName = signal('Nuevo equipo');
+  readonly savedTeams = signal<SavedTeam[]>([]);
+  readonly selectedTeamId = signal<string | null>(null);
   readonly canAdd = computed(() => this.team().length < MAX_TEAM);
+  readonly hasSavedTeams = computed(() => this.savedTeams().length > 0);
+  readonly isExistingTeam = computed(() => this.selectedTeamId() !== null);
 
   constructor() {
     // Boot: load all names once
@@ -46,30 +56,59 @@ export class TeamFacade {
         error: () => this.error.set('No se pudo cargar la lista de Pokémon'),
       });
 
-    // Load team from Firebase once
+    // Load saved teams once
     this.repository
-      .loadTeam()
-      .then((members) => {
-        this.team.set(Array.isArray(members) ? members : []);
-        this.lastSynced.set(JSON.stringify(this.team()));
+      .loadTeams()
+      .then((teams) => {
+        this.savedTeams.set(teams);
+        if (teams.length) {
+          const first = teams[0];
+          this.selectedTeamId.set(first.id);
+          this.teamName.set(first.name);
+          this.team.set([...first.members]);
+          this.updateLastSynced(first.id, first.name, first.members);
+        } else {
+          this.selectedTeamId.set(null);
+          const draft = this.newTeamDraft();
+          this.teamName.set(draft.name);
+          this.team.set([...draft.members]);
+        }
       })
       .catch((error) => {
         console.error(error);
-        this.lastSynced.set(JSON.stringify(this.team()));
       })
       .finally(() => {
         this.teamLoaded.set(true);
       });
 
-    // Persist team updates to Firebase
+    // Persist updates to the active saved team
     effect(() => {
       if (!this.teamLoaded()) return;
-      const current = this.team();
-      const serialized = JSON.stringify(current);
-      if (this.lastSynced() === serialized) return;
+      const id = this.selectedTeamId();
+      if (!id) return;
+
+      const currentName = this.teamName();
+      const normalizedName = this.normalizeName(currentName);
+      if (normalizedName !== currentName) {
+        queueMicrotask(() => this.teamName.set(normalizedName));
+        return;
+      }
+
+      const members = this.team();
+      const serialized = this.serialize(normalizedName, members);
+      const last = this.lastSynced().get(id);
+      if (last === serialized) return;
+
       void this.repository
-        .saveTeam(current)
-        .then(() => this.lastSynced.set(serialized))
+        .updateTeam(id, { name: normalizedName, members })
+        .then(() => {
+          this.updateLastSynced(id, normalizedName, members);
+          this.savedTeams.update((list) =>
+            list.map((team) =>
+              team.id === id ? { ...team, name: normalizedName, members: [...members] } : team
+            )
+          );
+        })
         .catch((error) => console.error(error));
     });
 
@@ -112,14 +151,105 @@ export class TeamFacade {
     if (!this.canAdd()) return;
     const exists = this.team().some((x) => x.id === p.id);
     if (exists) return; // evitar duplicados
-    this.team.update((arr) => [...arr, p]);
+    this.team.update((arr) => {
+      const next = [...arr, p];
+      this.syncDraftMembers(next);
+      return next;
+    });
   }
 
   removeFromTeam(id: number) {
-    this.team.update((arr) => arr.filter((x) => x.id !== id));
+    this.team.update((arr) => {
+      const next = arr.filter((x) => x.id !== id);
+      this.syncDraftMembers(next);
+      return next;
+    });
   }
 
   clearTeam() {
     this.team.set([]);
+    this.syncDraftMembers([]);
+  }
+
+  setTeamName(name: string) {
+    this.teamName.set(name);
+    if (!this.selectedTeamId()) {
+      this.newTeamDraft.update((draft) => ({ ...draft, name }));
+    }
+  }
+
+  selectTeam(id: string | null) {
+    if (this.selectedTeamId() === id) return;
+
+    const currentId = this.selectedTeamId();
+    if (!currentId) {
+      this.newTeamDraft.set({
+        name: this.teamName(),
+        members: [...this.team()],
+      });
+    }
+
+    if (id === null) {
+      const draft = this.newTeamDraft();
+      this.selectedTeamId.set(null);
+      this.teamName.set(draft.name);
+      this.team.set([...draft.members]);
+      return;
+    }
+
+    const target = this.savedTeams().find((team) => team.id === id);
+    if (!target) return;
+
+    this.selectedTeamId.set(id);
+    this.teamName.set(target.name);
+    this.team.set([...target.members]);
+    this.updateLastSynced(id, target.name, target.members);
+  }
+
+  async createCurrentTeam() {
+    const rawName = this.teamName();
+    const normalizedName = this.normalizeName(rawName);
+    const members = this.team();
+    if (normalizedName !== rawName) {
+      this.teamName.set(normalizedName);
+    }
+
+    try {
+      const id = await this.repository.createTeam(normalizedName, members);
+      const newTeam: SavedTeam = {
+        id,
+        name: normalizedName,
+        members: [...members],
+      };
+      this.savedTeams.update((list) => [...list, newTeam]);
+      this.selectedTeamId.set(id);
+      this.updateLastSynced(id, normalizedName, members);
+      this.newTeamDraft.set({ name: 'Nuevo equipo', members: [] });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private syncDraftMembers(members: PokemonVM[]) {
+    if (this.selectedTeamId()) return;
+    this.newTeamDraft.update((draft) => ({ ...draft, members: [...members] }));
+  }
+
+  private updateLastSynced(id: string, name: string, members: PokemonVM[]) {
+    const serialized = this.serialize(name, members);
+    this.lastSynced.update((map) => {
+      const next = new Map(map);
+      next.set(id, serialized);
+      return next;
+    });
+  }
+
+  private serialize(name: string, members: PokemonVM[]) {
+    return JSON.stringify({ name, members });
+  }
+
+  private normalizeName(name: string) {
+    const trimmed = name.trim();
+    return trimmed.length ? trimmed : 'Equipo sin nombre';
   }
 }

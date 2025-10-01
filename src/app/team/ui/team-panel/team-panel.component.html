@@ -4,6 +4,29 @@
     <button class="btn-clear" type="button" (click)="clear.emit()" [disabled]="!team.length">Limpiar</button>
   </div>
 
+  <div class="team-controls">
+    <label class="control">
+      <span>Equipo guardado</span>
+      <select [ngModel]="selectedTeamId ?? 'new'" (ngModelChange)="onSelectChange($event)">
+        <option value="new">➕ Nuevo equipo</option>
+        @for (saved of savedTeams; track trackTeamId($index, saved)) {
+          <option [value]="saved.id">{{ saved.name }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="control">
+      <span>Nombre del equipo</span>
+      <input type="text" [ngModel]="teamName" (ngModelChange)="teamNameChange.emit($event)" placeholder="Ingresa un nombre" />
+    </label>
+
+    @if (selectedTeamId === null) {
+      <button class="btn-save" type="button" (click)="createTeam.emit()" [disabled]="!teamName.trim()">Guardar nuevo equipo</button>
+    } @else {
+      <p class="muted autosave-note">Los cambios se guardan automáticamente.</p>
+    }
+  </div>
+
   @if (team.length) {
     <div class="team-grid">
       @for (p of team; track trackById($index, p)) {

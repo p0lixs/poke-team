@@ -17,6 +17,16 @@
         }
     </section>
     <aside>
-        <app-team-panel [team]="facade.team()" (remove)="facade.removeFromTeam($event)" (clear)="facade.clearTeam()" />
+        <app-team-panel
+            [team]="facade.team()"
+            [teamName]="facade.teamName()"
+            [savedTeams]="facade.savedTeams()"
+            [selectedTeamId]="facade.selectedTeamId()"
+            (teamNameChange)="facade.setTeamName($event)"
+            (selectTeam)="facade.selectTeam($event)"
+            (createTeam)="facade.createCurrentTeam()"
+            (remove)="facade.removeFromTeam($event)"
+            (clear)="facade.clearTeam()"
+        />
     </aside>
 </div>

@@ -1,38 +1,61 @@
 import { Injectable } from '@angular/core';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, updateDoc } from 'firebase/firestore';
+import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { firestore } from '../../shared/firebase/firebase.config';
 import { PokemonVM } from '../models/view.model';
+import { SavedTeam } from '../models/team.model';
 
 interface TeamDocument {
+  name?: string;
   members?: PokemonVM[];
 }
 
 const TEAM_COLLECTION = 'teams';
-const TEAM_DOCUMENT_ID = 'default';
 
 @Injectable({ providedIn: 'root' })
 export class TeamRepository {
-  private readonly docRef = doc(firestore, TEAM_COLLECTION, TEAM_DOCUMENT_ID);
+  private readonly collectionRef = collection(firestore, TEAM_COLLECTION);
 
-  async loadTeam(): Promise<PokemonVM[]> {
+  async loadTeams(): Promise<SavedTeam[]> {
     try {
-      const snapshot = await getDoc(this.docRef);
-      if (!snapshot.exists()) {
-        return [];
-      }
-      const data = snapshot.data() as TeamDocument | undefined;
-      return Array.isArray(data?.members) ? data!.members : [];
+      const snapshot = await getDocs(this.collectionRef);
+      return snapshot.docs.map((docSnapshot: QueryDocumentSnapshot<DocumentData>) => {
+        const data = (docSnapshot.data() as TeamDocument | undefined) ?? {};
+        return {
+          id: docSnapshot.id,
+          name: (data.name ?? '').trim() || 'Equipo sin nombre',
+          members: Array.isArray(data.members) ? data.members : [],
+        } satisfies SavedTeam;
+      });
     } catch (error) {
-      console.error('Error loading team from Firebase', error);
+      console.error('Error loading teams from Firebase', error);
       throw error;
     }
   }
 
-  async saveTeam(team: PokemonVM[]): Promise<void> {
+  async createTeam(name: string, members: PokemonVM[]): Promise<string> {
     try {
-      await setDoc(this.docRef, { members: team });
+      const docRef = await addDoc(this.collectionRef, {
+        name,
+        members,
+        updatedAt: Date.now(),
+      });
+      return docRef.id;
     } catch (error) {
-      console.error('Error saving team to Firebase', error);
+      console.error('Error creating team in Firebase', error);
+      throw error;
+    }
+  }
+
+  async updateTeam(id: string, payload: { name: string; members: PokemonVM[] }): Promise<void> {
+    try {
+      const ref = doc(this.collectionRef, id);
+      await updateDoc(ref, {
+        ...payload,
+        updatedAt: Date.now(),
+      });
+    } catch (error) {
+      console.error('Error updating team in Firebase', error);
       throw error;
     }
   }
