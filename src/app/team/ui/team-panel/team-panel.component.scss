@@ -1,21 +1,21 @@
 .team-panel {
   display: grid;
-  gap: .75rem;
+  gap: 0.75rem;
 }
 
 .team-controls {
   display: grid;
-  gap: .5rem;
-  padding: .75rem;
+  gap: 0.5rem;
+  padding: 0.75rem;
   background: #f9fafb;
-  border-radius: .75rem;
+  border-radius: 0.75rem;
   border: 1px solid #e5e7eb;
 }
 
 .control {
   display: grid;
-  gap: .25rem;
-  font-size: .85rem;
+  gap: 0.25rem;
+  font-size: 0.85rem;
 
   span {
     color: #4b5563;
@@ -26,34 +26,45 @@
   input {
     appearance: none;
     border: 1px solid #d1d5db;
-    border-radius: .5rem;
-    padding: .45rem .6rem;
-    font-size: .95rem;
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.95rem;
     background: #fff;
   }
 }
 
-.btn-save {
+.btn {
   justify-self: start;
   appearance: none;
   border: 0;
-  background: #2563eb;
+
   color: #fff;
   font-weight: 600;
-  padding: .45rem .9rem;
-  border-radius: .5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
   cursor: pointer;
+  &.save {
+    background: #2563eb;
+    &:hover {
+      background: #1d4ed8;
+    }
+  }
+  &.cancel {
+    background: #6b7280;
+    &:hover {
+      background: #4b5563;
+    }
+  }
 
-  &:hover { background: #1d4ed8; }
   &:disabled {
-    opacity: .6;
+    opacity: 0.6;
     cursor: default;
   }
 }
 
 .autosave-note {
   margin: 0;
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 .team-header {
@@ -61,7 +72,10 @@
   align-items: center;
   justify-content: space-between;
 
-  h2 { margin: 0; font-size: 1.1rem; }
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
 
   .btn-clear {
     appearance: none;
@@ -69,12 +83,17 @@
     background: #e5e7eb;
     color: #111827;
     font-weight: 600;
-    padding: .35rem .6rem;
-    border-radius: .5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.5rem;
     cursor: pointer;
 
-    &:hover { background: #d1d5db; }
-    &:disabled { opacity: .5; cursor: default; }
+    &:hover {
+      background: #d1d5db;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
   }
 }
 
@@ -86,16 +105,33 @@
 
   /* cada tarjeta intenta medir ~240–320px pero fluye */
   > app-pokemon {
-    flex: 1 1 240px;   /* grow | shrink | basis */
+    flex: 1 1 240px; /* grow | shrink | basis */
     max-width: 100%;
-    min-width: 200px;  /* evita tarjetas demasiado estrechas */
+    min-width: 200px; /* evita tarjetas demasiado estrechas */
+  }
+}
+.select-wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  select,
+  input {
+    width: 100%;
+  }
+  .btn-group {
+    display: flex;
+    gap: 0.5rem;
   }
 }
 
 /* Opcional: afinar saltos */
 @media (min-width: 480px) {
-  .team-grid > app-pokemon { flex-basis: 240px; }
+  .team-grid > app-pokemon {
+    flex-basis: 240px;
+  }
 }
 @media (min-width: 860px) {
-  .team-grid > app-pokemon { flex-basis: 300px; }
+  .team-grid > app-pokemon {
+    flex-basis: 300px;
+  }
 }

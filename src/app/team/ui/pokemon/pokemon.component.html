@@ -44,9 +44,9 @@
       @let selected = pokemon.selectedMoves[slot];
       <li class="moves__item">
         <ng-select class="moves__select" [items]="pokemon.moves" bindLabel="label" bindValue="url"
-          [id]="'move-' + pokemon.id + '-' + slot" [placeholder]="'Movimiento ' + (slot + 1)"
-          [clearable]="true" [ngModel]="selected?.url ?? null" (ngModelChange)="onMoveSelect(slot, $event)"
-          [searchable]="true" [virtualScroll]="true">
+          [id]="'move-' + pokemon.id + '-' + slot" [placeholder]="'Movimiento ' + (slot + 1)" [clearable]="true"
+          [ngModel]="selected?.url ?? null" (ngModelChange)="onMoveSelect(slot, $event)" [searchable]="true"
+          [virtualScroll]="true">
           <ng-template ng-label-tmp let-item="item">
             @let icon = getMoveIcon(item);
             <div class="moves__option moves__option--selected">
@@ -58,35 +58,7 @@
               <span class="moves__option-name">{{ item.label }}</span>
             </div>
           </ng-template>
-
-          <ng-template ng-option-tmp let-item="item">
-            @let icon = getMoveIcon(item);
-            <div class="moves__option">
-              @if (icon) {
-              <img class="moves__option-icon" [src]="icon" [alt]="item.type?.name ?? 'tipo'" />
-              } @else if (item.type?.name) {
-              <span class="moves__option-type moves__option-type--pill">{{ formatTypeName(item.type.name) }}</span>
-              }
-              <div class="moves__option-text">
-                <span class="moves__option-name">{{ item.label }}</span>
-                <span class="moves__option-meta" *ngIf="item.type?.name || item.power !== null">
-                  <span class="moves__option-type" *ngIf="item.type?.name">{{ formatTypeName(item.type.name) }}</span>
-                  <span class="moves__option-power" *ngIf="item.power !== null">Poder: {{ item.power }}</span>
-                </span>
-              </div>
-            </div>
-          </ng-template>
         </ng-select>
-        @if (selected) {
-        <div class="moves__summary">
-          @if (selected.type) {
-          <app-type-icon class="moves__type" [typeDetails]="[selected.type]" [size]="70"></app-type-icon>
-          }
-          @if(selected.power !== null ){
-          <span class="moves__power">Poder: {{ selected.power }}</span>
-          }
-        </div>
-        }
       </li>
       }
     </ul>

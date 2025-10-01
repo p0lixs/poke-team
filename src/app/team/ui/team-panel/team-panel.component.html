@@ -5,39 +5,46 @@
   </div>
 
   <div class="team-controls">
+    <!-- Bloque Select/Input + Botonera -->
     <label class="control">
-      <span>Equipo guardado</span>
-      <select [ngModel]="selectedTeamId ?? 'new'" (ngModelChange)="onSelectChange($event)">
-        <option value="new">➕ Nuevo equipo</option>
-        @for (saved of savedTeams; track trackTeamId($index, saved)) {
+      <span>Equipos</span>
+      <div class="select-wrapper">
+        @if (editMode === 'none') {
+        <!-- SELECT sin la opción 'Nuevo' -->
+        <select [ngModel]="selectedTeamId ?? ''" (ngModelChange)="onSelectChange($event)">
+          @for (saved of savedTeams; track trackTeamId($index, saved)) {
           <option [value]="saved.id">{{ saved.name }}</option>
+          }
+        </select>
+        } @else {
+        <!-- INPUT cuando se pulsa Añadir o Modificar -->
+        <input type="text" [ngModel]="tempName" (ngModelChange)="tempName = $event"
+          placeholder="@{{ editMode === 'add' ? 'Nombre del nuevo equipo' : 'Nuevo nombre para el equipo' }}" />
         }
-      </select>
+        @if (editMode === 'none') {
+        <div class="btn-group">
+          <button class="btn save" type="button" (click)="startAdd()">Añadir</button>
+          <button class="btn save" type="button" (click)="startEdit()" [disabled]="!selectedTeamId">Modificar</button>
+        </div>
+        } @else {
+        <div class="btn-group">
+          <button class="btn save" type="button" (click)="confirm()" [disabled]="!tempName.trim()">Guardar</button>
+          <button class="btn cancel" type="button" (click)="cancelEdit()">Cancelar</button>
+        </div>
+        }
+      </div>
     </label>
 
-    <label class="control">
-      <span>Nombre del equipo</span>
-      <input type="text" [ngModel]="teamName" (ngModelChange)="teamNameChange.emit($event)" placeholder="Ingresa un nombre" />
-    </label>
 
-    @if (selectedTeamId === null) {
-      <button class="btn-save" type="button" (click)="createTeam.emit()" [disabled]="!teamName.trim()">Guardar nuevo equipo</button>
-    } @else {
-      <p class="muted autosave-note">Los cambios se guardan automáticamente.</p>
-    }
   </div>
 
   @if (team.length) {
-    <div class="team-grid">
-      @for (p of team; track trackById($index, p)) {
-        <app-pokemon
-          [pokemon]="p"
-          (remove)="remove.emit($event)"
-          (moveChange)="moveChange.emit($event)"
-        ></app-pokemon>
-      }
-    </div>
+  <div class="team-grid">
+    @for (p of team; track trackById($index, p)) {
+    <app-pokemon [pokemon]="p" (remove)="remove.emit($event)" (moveChange)="moveChange.emit($event)"></app-pokemon>
+    }
+  </div>
   } @else {
-    <p class="muted">Aún no has añadido ningún Pokémon.</p>
+  <p class="muted">Aún no has añadido ningún Pokémon.</p>
   }
 </div>

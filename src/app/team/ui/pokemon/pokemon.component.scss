@@ -117,7 +117,9 @@
     font-weight: 600;
   }
 }
-
+::ng-deep .ng-dropdown-panel {
+  background-color: white;
+}
 .moves {
   display: flex;
   flex-flow: column;
@@ -193,14 +195,15 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-
+    border-bottom: 1px solid #d1d3d6;
+    margin: 0.5rem 0;
     &--selected {
       gap: 0.4rem;
     }
   }
 
   &__option-icon {
-    width: 1.5rem;
+    width: 4.5rem;
     height: 1.5rem;
     object-fit: contain;
   }
