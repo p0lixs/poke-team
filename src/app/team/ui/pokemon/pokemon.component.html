@@ -44,10 +44,13 @@
       @let selected = pokemon.selectedMoves[slot];
       <li class="moves__item">
         <select class="moves__select" [id]="'move-' + pokemon.id + '-' + slot" [ngModel]="selected?.url ?? ''"
-          (ngModelChange)="onMoveSelect(slot, $event)">
-          <option value="">Movimiento {{ slot + 1 }}</option>
+          [ngStyle]="selectedOptionStyle(selected)" (ngModelChange)="onMoveSelect(slot, $event)">
+          <option class="moves__option moves__option--placeholder" value="">Movimiento {{ slot + 1 }}</option>
           @for (move of pokemon.moves; track trackMove($index, move)) {
-          <option [value]="move.url">{{ move.label }}</option>
+          <option class="moves__option" [ngClass]="{ 'moves__option--with-icon': move.type }"
+            [ngStyle]="typeIconStyle(move)" [value]="move.url">
+            {{ formatMoveOptionLabel(move) }}
+          </option>
           }
         </select>
         @if (selected) {

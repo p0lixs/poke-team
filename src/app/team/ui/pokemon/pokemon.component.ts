@@ -5,11 +5,13 @@ import { TypeIcon } from '../../../shared/ui/type-icon/type-icon';
 import { STAT_MAX_VALUES } from '../../../shared/util/constants';
 import { TypeIconService } from '../../data/type-icon.service';
 import {
+  PokemonMoveDetailVM,
   PokemonMoveOptionVM,
   PokemonMoveSelectionPayload,
   PokemonStatVM,
   PokemonVM,
 } from '../../models/view.model';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-pokemon',
@@ -20,6 +22,7 @@ import {
 export class PokemonComponent {
   private _pokemon!: PokemonVM;
   readonly moveSlots = [0, 1, 2, 3];
+  private moveIconUrls: Record<string, string | null> = {};
 
   @Input() set pokemon(value: PokemonVM) {
     this._pokemon = {
@@ -30,6 +33,7 @@ export class PokemonComponent {
         ? value.selectedMoves
         : [null, null, null, null],
     };
+    this.prepareMoveIcons();
   }
   get pokemon(): PokemonVM {
     return this._pokemon;
@@ -40,6 +44,34 @@ export class PokemonComponent {
   @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
 
   typeIcons = inject(TypeIconService);
+
+  private prepareMoveIcons() {
+    const moves = this._pokemon?.moves ?? [];
+    const moveUrls = new Set(moves.map((move) => move.url));
+
+    for (const url of Object.keys(this.moveIconUrls)) {
+      if (!moveUrls.has(url)) {
+        delete this.moveIconUrls[url];
+      }
+    }
+
+    moves.forEach((move) => {
+      const typeUrl = move.type?.url;
+      if (!typeUrl || this.moveIconUrls[move.url] !== undefined) {
+        return;
+      }
+
+      this.typeIcons
+        .getIconByTypeUrl(typeUrl)
+        .pipe(take(1))
+        .subscribe((iconUrl) => {
+          this.moveIconUrls = {
+            ...this.moveIconUrls,
+            [move.url]: iconUrl,
+          };
+        });
+    });
+  }
 
   onRemove() {
     this.remove.emit(this.pokemon.id);
@@ -64,6 +96,74 @@ export class PokemonComponent {
 
   icon$(url: string) {
     return this.typeIcons.getIconByTypeUrl(url);
+  }
+
+  typeIconStyle(move: PokemonMoveOptionVM): Record<string, string> | null {
+    const iconUrl = this.moveIconUrls[move.url];
+    if (iconUrl) {
+      return {
+        'background-image': `url(${iconUrl})`,
+        'background-repeat': 'no-repeat',
+        'background-position': '0.6rem center',
+        'background-size': '1.5rem 1.5rem',
+        'padding-left': '2.8rem',
+      };
+    }
+
+    if (move.type) {
+      return {
+        'padding-left': '2.4rem',
+      };
+    }
+
+    return null;
+  }
+
+  selectedOptionStyle(selected: PokemonMoveDetailVM | null): Record<string, string> | null {
+    if (!selected) {
+      return null;
+    }
+
+    const iconUrl = selected.url ? this.moveIconUrls[selected.url] : null;
+    if (iconUrl) {
+      return {
+        'background-image': `url(${iconUrl})`,
+        'background-repeat': 'no-repeat',
+        'background-position': '0.6rem center',
+        'background-size': '1.5rem 1.5rem',
+        'padding-left': '2.8rem',
+      };
+    }
+
+    if (selected.type) {
+      return {
+        'padding-left': '2.4rem',
+      };
+    }
+
+    return null;
+  }
+
+  formatMoveOptionLabel(move: PokemonMoveOptionVM): string {
+    const parts = [move.label];
+
+    if (move.type?.name) {
+      parts.push(this.formatTypeName(move.type.name));
+    }
+
+    if (move.power !== null) {
+      parts.push(`Poder: ${move.power}`);
+    }
+
+    return parts.join(' - ');
+  }
+
+  private formatTypeName(value: string): string {
+    return value
+      .split(/[-\s]+/)
+      .filter(Boolean)
+      .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+      .join(' ');
   }
 
   getStatPercentage(stat: PokemonStatVM): number {

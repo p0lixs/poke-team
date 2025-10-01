@@ -19,6 +19,8 @@ export interface PokemonMoveOptionVM {
   name: string;
   label: string;
   url: string;
+  type: { name: string; url: string } | null;
+  power: number | null;
 }
 
 export interface PokemonMoveDetailVM {

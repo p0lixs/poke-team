@@ -321,7 +321,19 @@ export class TeamFacade {
       const nextTeam = [...current];
       const pokemon = this.mapper.normalizeVM(nextTeam[index]);
       const selectedMoves = [...pokemon.selectedMoves];
-      selectedMoves[slot] = this.mapper.normalizeMoveDetail(detail);
+      const normalizedDetail = this.mapper.normalizeMoveDetail(detail);
+      selectedMoves[slot] = normalizedDetail;
+      if (normalizedDetail?.url && (normalizedDetail.type || normalizedDetail.power !== null)) {
+        pokemon.moves = pokemon.moves.map((move) =>
+          move.url === normalizedDetail.url
+            ? {
+                ...move,
+                type: normalizedDetail.type,
+                power: normalizedDetail.power,
+              }
+            : move
+        );
+      }
       pokemon.selectedMoves = selectedMoves;
       nextTeam[index] = pokemon;
       this.syncDraftMembers(nextTeam);
