@@ -1,12 +1,16 @@
 import { Injectable } from '@angular/core';
 import { STAT_LABELS } from '../../shared/util/constants';
-import { PokemonDTO } from '../models/pokeapi.dto';
-import { PokemonVM } from '../models/view.model';
+import { MoveDTO, PokemonDTO } from '../models/pokeapi.dto';
+import {
+  PokemonMoveDetailVM,
+  PokemonMoveOptionVM,
+  PokemonVM,
+} from '../models/view.model';
 
 @Injectable({ providedIn: 'root' })
 export class PokemonMapper {
   toVM(dto: PokemonDTO): PokemonVM {
-    return {
+    const base: PokemonVM = {
       id: dto.id,
       name: dto.name,
       sprite: dto.sprites.front_default,
@@ -20,10 +24,112 @@ export class PokemonMapper {
           label: STAT_LABELS[stat.stat.name] ?? this.toTitleCase(stat.stat.name.replace(/-/g, ' ')),
           value: stat.base_stat,
         })) ?? [],
+      moves:
+        dto.moves?.map((move) => ({
+          name: move.move.name,
+          label: this.formatMoveName(move.move.name),
+          url: move.move.url,
+        })) ?? [],
+      selectedMoves: [],
+    };
+
+    return this.normalizeVM(base);
+  }
+
+  normalizeVM(value: PokemonVM): PokemonVM {
+    return {
+      ...value,
+      types: Array.isArray(value.types) ? [...value.types] : [],
+      typeDetails: Array.isArray(value.typeDetails)
+        ? value.typeDetails.map((type) => ({ name: type.name, url: type.url }))
+        : [],
+      stats: Array.isArray(value.stats)
+        ? value.stats.map((stat) => ({
+            name: stat.name,
+            label:
+              stat.label ??
+              STAT_LABELS[stat.name] ??
+              this.toTitleCase(stat.name.replace(/-/g, ' ')),
+            value: stat.value ?? 0,
+          }))
+        : [],
+      moves: this.normalizeMoveOptions(value.moves),
+      selectedMoves: this.normalizeSelectedMoves(value.selectedMoves),
+    };
+  }
+
+  moveDetailFromDto(dto: MoveDTO, url: string): PokemonMoveDetailVM {
+    return {
+      name: this.formatMoveName(dto.name),
+      url,
+      type: dto.type && dto.type.url ? { name: dto.type.name, url: dto.type.url } : null,
+      power: dto.power ?? null,
+    };
+  }
+
+  createMovePlaceholder(option: PokemonMoveOptionVM | undefined, url: string): PokemonMoveDetailVM {
+    const baseName = option?.label ?? option?.name ?? this.extractNameFromUrl(url);
+    return {
+      name: this.formatMoveName(baseName),
+      url,
+      type: null,
+      power: null,
+    };
+  }
+
+  normalizeMoveDetail(detail: PokemonMoveDetailVM | null): PokemonMoveDetailVM | null {
+    if (!detail || typeof detail.url !== 'string' || !detail.url.trim()) {
+      return null;
+    }
+
+    const type = detail.type && detail.type.url ? { name: detail.type.name, url: detail.type.url } : null;
+
+    return {
+      name: this.formatMoveName(detail.name ?? this.extractNameFromUrl(detail.url)),
+      url: detail.url,
+      type,
+      power: detail.power ?? null,
     };
   }
 
   private toTitleCase(value: string): string {
     return value.replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.substring(1).toLowerCase());
+  }
+
+  private formatMoveName(value: string | undefined | null): string {
+    const normalized = (value ?? '').trim();
+    if (!normalized) return 'Movimiento';
+    return this.toTitleCase(normalized.replace(/-/g, ' '));
+  }
+
+  private normalizeMoveOptions(options: PokemonMoveOptionVM[] | undefined): PokemonMoveOptionVM[] {
+    if (!Array.isArray(options)) {
+      return [];
+    }
+
+    return options
+      .filter((option): option is PokemonMoveOptionVM => !!option && typeof option.url === 'string' && !!option.url.trim())
+      .map((option) => ({
+        name: option.name,
+        label: option.label ?? this.formatMoveName(option.name),
+        url: option.url,
+      }));
+  }
+
+  private normalizeSelectedMoves(
+    moves: (PokemonMoveDetailVM | null)[] | undefined
+  ): (PokemonMoveDetailVM | null)[] {
+    const base = Array.isArray(moves) ? moves : [];
+
+    return Array.from({ length: 4 }, (_, index) => {
+      const detail = base[index] ?? null;
+      return this.normalizeMoveDetail(detail);
+    });
+  }
+
+  private extractNameFromUrl(url: string | undefined): string {
+    if (!url) return '';
+    const segments = url.split('/').filter(Boolean);
+    return segments[segments.length - 1] ?? '';
   }
 }

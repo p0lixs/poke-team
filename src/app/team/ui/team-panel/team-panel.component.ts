@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PokemonVM } from '../../models/view.model';
+import { PokemonMoveSelectionPayload, PokemonVM } from '../../models/view.model';
 import { SavedTeam } from '../../models/team.model';
 import { PokemonComponent } from '../pokemon/pokemon.component';
 
@@ -21,6 +21,7 @@ export class TeamPanelComponent {
   @Output() teamNameChange = new EventEmitter<string>();
   @Output() selectTeam = new EventEmitter<string | null>();
   @Output() createTeam = new EventEmitter<void>();
+  @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
 
   trackById(_i: number, p: PokemonVM) {
     return (p as any).id ?? p;

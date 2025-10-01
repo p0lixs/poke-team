@@ -1,7 +1,7 @@
 import { Injectable, WritableSignal, computed, effect, inject, signal } from '@angular/core';
 import { PokemonApi } from './pokemon.api';
 import { PokemonMapper } from './pokemon.mapper';
-import { PokemonVM } from '../models/view.model';
+import { PokemonMoveDetailVM, PokemonMoveSelectionPayload, PokemonVM } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
 import { PokemonDTO } from '../models/pokeapi.dto';
@@ -17,6 +17,7 @@ export class TeamFacade {
   private repository = inject(TeamRepository);
   private readonly teamLoaded = signal(false);
   private readonly lastSynced = signal<Map<string, string>>(new Map());
+  private readonly moveDetailsCache = new Map<string, PokemonMoveDetailVM>();
   private readonly newTeamDraft = signal<{ name: string; members: PokemonVM[] }>({
     name: 'Nuevo equipo',
     members: [],
@@ -60,18 +61,23 @@ export class TeamFacade {
     this.repository
       .loadTeams()
       .then((teams) => {
-        this.savedTeams.set(teams);
-        if (teams.length) {
-          const first = teams[0];
+        const normalizedTeams = teams.map((team) => ({
+          ...team,
+          members: this.normalizeTeamMembers(team.members ?? []),
+        }));
+
+        this.savedTeams.set(normalizedTeams);
+        if (normalizedTeams.length) {
+          const first = normalizedTeams[0];
           this.selectedTeamId.set(first.id);
           this.teamName.set(first.name);
-          this.team.set([...first.members]);
+          this.team.set(this.normalizeTeamMembers(first.members));
           this.updateLastSynced(first.id, first.name, first.members);
         } else {
           this.selectedTeamId.set(null);
           const draft = this.newTeamDraft();
           this.teamName.set(draft.name);
-          this.team.set([...draft.members]);
+          this.team.set(this.normalizeTeamMembers(draft.members));
         }
       })
       .catch((error) => {
@@ -94,7 +100,7 @@ export class TeamFacade {
         return;
       }
 
-      const members = this.team();
+      const members = this.normalizeTeamMembers(this.team());
       const serialized = this.serialize(normalizedName, members);
       const last = this.lastSynced().get(id);
       if (last === serialized) return;
@@ -105,7 +111,9 @@ export class TeamFacade {
           this.updateLastSynced(id, normalizedName, members);
           this.savedTeams.update((list) =>
             list.map((team) =>
-              team.id === id ? { ...team, name: normalizedName, members: [...members] } : team
+              team.id === id
+                ? { ...team, name: normalizedName, members: this.normalizeTeamMembers(members) }
+                : team
             )
           );
         })
@@ -135,7 +143,7 @@ export class TeamFacade {
       )
       .subscribe({
         next: (dtos: PokemonDTO[]) => {
-          const list = Array.isArray(dtos) ? dtos.map(this.mapper.toVM) : [];
+          const list = Array.isArray(dtos) ? dtos.map((dto) => this.mapper.toVM(dto)) : [];
           this.results.set(list);
           this.loading.set(false);
         },
@@ -151,8 +159,9 @@ export class TeamFacade {
     if (!this.canAdd()) return;
     const exists = this.team().some((x) => x.id === p.id);
     if (exists) return; // evitar duplicados
+    const pokemon = this.mapper.normalizeVM(p);
     this.team.update((arr) => {
-      const next = [...arr, p];
+      const next = [...arr, pokemon];
       this.syncDraftMembers(next);
       return next;
     });
@@ -185,7 +194,7 @@ export class TeamFacade {
     if (!currentId) {
       this.newTeamDraft.set({
         name: this.teamName(),
-        members: [...this.team()],
+        members: this.normalizeTeamMembers(this.team()),
       });
     }
 
@@ -193,7 +202,7 @@ export class TeamFacade {
       const draft = this.newTeamDraft();
       this.selectedTeamId.set(null);
       this.teamName.set(draft.name);
-      this.team.set([...draft.members]);
+      this.team.set(this.normalizeTeamMembers(draft.members));
       return;
     }
 
@@ -202,14 +211,14 @@ export class TeamFacade {
 
     this.selectedTeamId.set(id);
     this.teamName.set(target.name);
-    this.team.set([...target.members]);
+    this.team.set(this.normalizeTeamMembers(target.members));
     this.updateLastSynced(id, target.name, target.members);
   }
 
   async createCurrentTeam() {
     const rawName = this.teamName();
     const normalizedName = this.normalizeName(rawName);
-    const members = this.team();
+    const members = this.normalizeTeamMembers(this.team());
     if (normalizedName !== rawName) {
       this.teamName.set(normalizedName);
     }
@@ -219,7 +228,7 @@ export class TeamFacade {
       const newTeam: SavedTeam = {
         id,
         name: normalizedName,
-        members: [...members],
+        members,
       };
       this.savedTeams.update((list) => [...list, newTeam]);
       this.selectedTeamId.set(id);
@@ -232,7 +241,10 @@ export class TeamFacade {
 
   private syncDraftMembers(members: PokemonVM[]) {
     if (this.selectedTeamId()) return;
-    this.newTeamDraft.update((draft) => ({ ...draft, members: [...members] }));
+    this.newTeamDraft.update((draft) => ({
+      ...draft,
+      members: this.normalizeTeamMembers(members),
+    }));
   }
 
   private updateLastSynced(id: string, name: string, members: PokemonVM[]) {
@@ -246,6 +258,79 @@ export class TeamFacade {
 
   private serialize(name: string, members: PokemonVM[]) {
     return JSON.stringify({ name, members });
+  }
+
+  changePokemonMove(change: PokemonMoveSelectionPayload) {
+    const slot = Math.min(Math.max(change.slot, 0), 3);
+    const moveUrl = change.moveUrl?.trim() ? change.moveUrl : null;
+    const target = this.team().find((pokemon) => pokemon.id === change.pokemonId);
+    if (!target) {
+      return;
+    }
+    const existing = target.selectedMoves?.[slot] ?? null;
+
+    if (!moveUrl && !existing) {
+      return;
+    }
+
+    if (existing && existing.url === moveUrl) {
+      return;
+    }
+
+    const option = moveUrl ? target.moves.find((move) => move.url === moveUrl) : undefined;
+
+    const placeholder = moveUrl ? this.mapper.createMovePlaceholder(option, moveUrl) : null;
+    this.updatePokemonMoveSlot(change.pokemonId, slot, placeholder);
+
+    if (!moveUrl) {
+      return;
+    }
+
+    const cached = this.moveDetailsCache.get(moveUrl);
+    if (cached) {
+      this.updatePokemonMoveSlot(change.pokemonId, slot, cached);
+      return;
+    }
+
+    this.api
+      .getMoveByUrl(moveUrl)
+      .pipe(take(1))
+      .subscribe({
+        next: (dto) => {
+          const detail = this.mapper.moveDetailFromDto(dto, moveUrl);
+          this.moveDetailsCache.set(moveUrl, detail);
+          this.updatePokemonMoveSlot(change.pokemonId, slot, detail);
+        },
+        error: (error) => {
+          console.error('Error loading move details', error);
+        },
+      });
+  }
+
+  private updatePokemonMoveSlot(
+    pokemonId: number,
+    slot: number,
+    detail: PokemonMoveDetailVM | null
+  ) {
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.mapper.normalizeVM(nextTeam[index]);
+      const selectedMoves = [...pokemon.selectedMoves];
+      selectedMoves[slot] = this.mapper.normalizeMoveDetail(detail);
+      pokemon.selectedMoves = selectedMoves;
+      nextTeam[index] = pokemon;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
+  }
+
+  private normalizeTeamMembers(members: PokemonVM[]): PokemonVM[] {
+    return (members ?? []).map((member) => this.mapper.normalizeVM(member));
   }
 
   private normalizeName(name: string) {
