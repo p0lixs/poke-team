@@ -29,6 +29,8 @@ export class PokemonMapper {
           name: move.move.name,
           label: this.formatMoveName(move.move.name),
           url: move.move.url,
+          type: null,
+          power: null,
         })) ?? [],
       selectedMoves: [],
     };
@@ -113,6 +115,8 @@ export class PokemonMapper {
         name: option.name,
         label: option.label ?? this.formatMoveName(option.name),
         url: option.url,
+        type: option.type && option.type.url ? { name: option.type.name, url: option.type.url } : null,
+        power: option.power ?? null,
       }));
   }
 
