@@ -87,79 +87,15 @@ export class PokemonComponent {
     });
   }
 
-  trackType(i: number, t: any) {
-    return t?.name ?? i;
-  }
-
-  trackMove(_i: number, move: PokemonMoveOptionVM) {
-    return move?.url ?? _i;
-  }
-
-  icon$(url: string) {
-    return this.typeIcons.getIconByTypeUrl(url);
-  }
-
-  typeIconStyle(move: PokemonMoveOptionVM): Record<string, string> | null {
-    const iconUrl = this.moveIconUrls[move.url];
-    if (iconUrl) {
-      return {
-        'background-image': `url(${iconUrl})`,
-        'background-repeat': 'no-repeat',
-        'background-position': '0.6rem center',
-        'background-size': '1.5rem 1.5rem',
-        'padding-left': '2.8rem',
-      };
-    }
-
-    if (move.type) {
-      return {
-        'padding-left': '2.4rem',
-      };
-    }
-
-    return null;
-  }
-
-  selectedOptionStyle(selected: PokemonMoveDetailVM | null): Record<string, string> | null {
-    if (!selected) {
+  getMoveIcon(move: PokemonMoveOptionVM | PokemonMoveDetailVM | null): string | null {
+    if (!move) {
       return null;
     }
 
-    const iconUrl = selected.url ? this.moveIconUrls[selected.url] : null;
-    if (iconUrl) {
-      return {
-        'background-image': `url(${iconUrl})`,
-        'background-repeat': 'no-repeat',
-        'background-position': '0.6rem center',
-        'background-size': '1.5rem 1.5rem',
-        'padding-left': '2.8rem',
-      };
-    }
-
-    if (selected.type) {
-      return {
-        'padding-left': '2.4rem',
-      };
-    }
-
-    return null;
+    return this.moveIconUrls[move.url] ?? null;
   }
 
-  formatMoveOptionLabel(move: PokemonMoveOptionVM): string {
-    const parts = [move.label];
-
-    if (move.type?.name) {
-      parts.push(this.formatTypeName(move.type.name));
-    }
-
-    if (move.power !== null) {
-      parts.push(`Poder: ${move.power}`);
-    }
-
-    return parts.join(' - ');
-  }
-
-  private formatTypeName(value: string): string {
+  formatTypeName(value: string): string {
     return value
       .split(/[-\s]+/)
       .filter(Boolean)
