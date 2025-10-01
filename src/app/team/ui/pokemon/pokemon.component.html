@@ -1,17 +1,12 @@
 <article class="pokemon-card">
   <header class="head">
-    <img
-      class="sprite"
-      [src]="pokemon.sprite || 'assets/placeholder-poke.png'"
-      [alt]="pokemon.name"
-      loading="lazy"
-      referrerpolicy="no-referrer"
-    />
+    <img class="sprite" [src]="pokemon.sprite || 'assets/placeholder-poke.png'" [alt]="pokemon.name" loading="lazy"
+      referrerpolicy="no-referrer" />
     <div class="title">
       <h3 class="name">{{ pokemon.name }}</h3>
       <!-- pokemon.component.html (sustituye la parte de tipos) -->
       @if (pokemon['typeDetails'].length) {
-      <app-type-icon [typeDetails]="pokemon.typeDetails" [size]="20"></app-type-icon>
+      <app-type-icon [typeDetails]="pokemon.typeDetails" [size]="100"></app-type-icon>
       } @else if (pokemon.types.length) {
       <!-- Fallback por si aún no tienes typeDetails -->
       <ul class="types">
@@ -31,11 +26,8 @@
       <li class="stats__item">
         <span class="stats__label">{{ stat.label }}</span>
         <div class="stats__bar">
-          <div
-            class="stats__bar-fill"
-            [style.width.%]="getStatPercentage(stat)"
-            [style.background]="getStatGradient(stat)"
-          ></div>
+          <div class="stats__bar-fill" [style.width.%]="getStatPercentage(stat)"
+            [style.background]="getStatGradient(stat)"></div>
         </div>
         <span class="stats__value">{{ stat.value }}</span>
       </li>
@@ -51,27 +43,21 @@
       @for (slot of moveSlots; track slot) {
       @let selected = pokemon.selectedMoves[slot];
       <li class="moves__item">
-        <label class="moves__label" [attr.for]="'move-' + pokemon.id + '-' + slot">
-          Movimiento {{ slot + 1 }}
-        </label>
-        <select
-          class="moves__select"
-          [id]="'move-' + pokemon.id + '-' + slot"
-          [ngModel]="selected?.url ?? ''"
-          (ngModelChange)="onMoveSelect(slot, $event)"
-        >
-          <option value="">Selecciona un movimiento</option>
+        <select class="moves__select" [id]="'move-' + pokemon.id + '-' + slot" [ngModel]="selected?.url ?? ''"
+          (ngModelChange)="onMoveSelect(slot, $event)">
+          <option value="">Movimiento {{ slot + 1 }}</option>
           @for (move of pokemon.moves; track trackMove($index, move)) {
           <option [value]="move.url">{{ move.label }}</option>
           }
         </select>
         @if (selected) {
         <div class="moves__summary">
-          <span class="moves__name">{{ selected.name }}</span>
           @if (selected.type) {
-          <app-type-icon class="moves__type" [typeDetails]="[selected.type]" [size]="18"></app-type-icon>
+          <app-type-icon class="moves__type" [typeDetails]="[selected.type]" [size]="70"></app-type-icon>
           }
-          <span class="moves__power">Poder: {{ selected.power ?? '—' }}</span>
+          @if(selected.power !== null ){
+          <span class="moves__power">Poder: {{ selected.power }}</span>
+          }
         </div>
         }
       </li>

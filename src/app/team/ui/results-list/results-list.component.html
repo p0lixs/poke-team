@@ -1,16 +1,16 @@
 <div class="results">
   @for (p of results; track trackById($index, p)) {
-    <article class="result">
-      <div class="left">
-        <img class="sprite" [src]="p.sprite || 'assets/placeholder-poke.png'" [alt]="p.name" />
-      </div>
-      <div class="center">
-        <h4 class="name">{{ p.name }}</h4>
-        <app-type-icon [typeDetails]="p.typeDetails" [size]="18"></app-type-icon>
-      </div>
-      <div class="right">
-        <button type="button" class="btn-add" (click)="add.emit(p)">Añadir</button>
-      </div>
-    </article>
+  <article class="result">
+    <div class="left">
+      <img class="sprite" [src]="p.sprite || 'assets/placeholder-poke.png'" [alt]="p.name" />
+    </div>
+    <div class="center">
+      <h4 class="name">{{ p.name }}</h4>
+      <app-type-icon [typeDetails]="p.typeDetails" [size]="80"></app-type-icon>
+    </div>
+    <div class="right">
+      <button type="button" class="btn-add" (click)="add.emit(p)">Añadir</button>
+    </div>
+  </article>
   }
 </div>
