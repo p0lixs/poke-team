@@ -43,16 +43,40 @@
       @for (slot of moveSlots; track slot) {
       @let selected = pokemon.selectedMoves[slot];
       <li class="moves__item">
-        <select class="moves__select" [id]="'move-' + pokemon.id + '-' + slot" [ngModel]="selected?.url ?? ''"
-          [ngStyle]="selectedOptionStyle(selected)" (ngModelChange)="onMoveSelect(slot, $event)">
-          <option class="moves__option moves__option--placeholder" value="">Movimiento {{ slot + 1 }}</option>
-          @for (move of pokemon.moves; track trackMove($index, move)) {
-          <option class="moves__option" [ngClass]="{ 'moves__option--with-icon': move.type }"
-            [ngStyle]="typeIconStyle(move)" [value]="move.url">
-            {{ formatMoveOptionLabel(move) }}
-          </option>
-          }
-        </select>
+        <ng-select class="moves__select" [items]="pokemon.moves" bindLabel="label" bindValue="url"
+          [id]="'move-' + pokemon.id + '-' + slot" [placeholder]="'Movimiento ' + (slot + 1)"
+          [clearable]="true" [ngModel]="selected?.url ?? null" (ngModelChange)="onMoveSelect(slot, $event)"
+          [searchable]="true" [virtualScroll]="true">
+          <ng-template ng-label-tmp let-item="item">
+            @let icon = getMoveIcon(item);
+            <div class="moves__option moves__option--selected">
+              @if (icon) {
+              <img class="moves__option-icon" [src]="icon" [alt]="item.type?.name ?? 'tipo'" />
+              } @else if (item.type?.name) {
+              <span class="moves__option-type moves__option-type--pill">{{ formatTypeName(item.type.name) }}</span>
+              }
+              <span class="moves__option-name">{{ item.label }}</span>
+            </div>
+          </ng-template>
+
+          <ng-template ng-option-tmp let-item="item">
+            @let icon = getMoveIcon(item);
+            <div class="moves__option">
+              @if (icon) {
+              <img class="moves__option-icon" [src]="icon" [alt]="item.type?.name ?? 'tipo'" />
+              } @else if (item.type?.name) {
+              <span class="moves__option-type moves__option-type--pill">{{ formatTypeName(item.type.name) }}</span>
+              }
+              <div class="moves__option-text">
+                <span class="moves__option-name">{{ item.label }}</span>
+                <span class="moves__option-meta" *ngIf="item.type?.name || item.power !== null">
+                  <span class="moves__option-type" *ngIf="item.type?.name">{{ formatTypeName(item.type.name) }}</span>
+                  <span class="moves__option-power" *ngIf="item.power !== null">Poder: {{ item.power }}</span>
+                </span>
+              </div>
+            </div>
+          </ng-template>
+        </ng-select>
         @if (selected) {
         <div class="moves__summary">
           @if (selected.type) {
