@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { PokemonDTO, PokemonListResponse } from '../models/pokeapi.dto';
+import { MoveDTO, PokemonDTO, PokemonListResponse } from '../models/pokeapi.dto';
 
 const API = 'https://pokeapi.co/api/v2';
 
@@ -18,5 +18,9 @@ export class PokemonApi {
 
   getPokemonByName(name: string): Observable<PokemonDTO> {
     return this.http.get<PokemonDTO>(`${API}/pokemon/${name.toLowerCase()}`);
+  }
+
+  getMoveByUrl(url: string): Observable<MoveDTO> {
+    return this.http.get<MoveDTO>(url);
   }
 }

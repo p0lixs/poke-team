@@ -44,6 +44,42 @@
   </section>
   }
 
+  @if (pokemon.moves.length) {
+  <section class="moves">
+    <h4 class="moves__title">Movimientos</h4>
+    <ul class="moves__list">
+      @for (slot of moveSlots; track slot) {
+      @let selected = pokemon.selectedMoves[slot];
+      <li class="moves__item">
+        <label class="moves__label" [attr.for]="'move-' + pokemon.id + '-' + slot">
+          Movimiento {{ slot + 1 }}
+        </label>
+        <select
+          class="moves__select"
+          [id]="'move-' + pokemon.id + '-' + slot"
+          [ngModel]="selected?.url ?? ''"
+          (ngModelChange)="onMoveSelect(slot, $event)"
+        >
+          <option value="">Selecciona un movimiento</option>
+          @for (move of pokemon.moves; track trackMove($index, move)) {
+          <option [value]="move.url">{{ move.label }}</option>
+          }
+        </select>
+        @if (selected) {
+        <div class="moves__summary">
+          <span class="moves__name">{{ selected.name }}</span>
+          @if (selected.type) {
+          <app-type-icon class="moves__type" [typeDetails]="[selected.type]" [size]="18"></app-type-icon>
+          }
+          <span class="moves__power">Poder: {{ selected.power ?? '—' }}</span>
+        </div>
+        }
+      </li>
+      }
+    </ul>
+  </section>
+  }
+
   <footer class="actions">
     @if (showRemove) {
     <button type="button" class="btn-remove" (click)="onRemove()">Quitar</button>
