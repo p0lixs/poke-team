@@ -12,10 +12,11 @@ import {
   PokemonVM,
 } from '../../models/view.model';
 import { take } from 'rxjs/operators';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-pokemon',
-  imports: [CommonModule, FormsModule, TypeIcon],
+  imports: [CommonModule, FormsModule, TypeIcon, NgSelectModule],
   templateUrl: './pokemon.component.html',
   styleUrl: './pokemon.component.scss',
 })
