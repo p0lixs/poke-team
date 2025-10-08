@@ -46,16 +46,31 @@
       @for (slot of moveSlots; track slot) {
       @let selected = pokemon.selectedMoves[slot];
       <li class="moves__selected-item">
-        <button type="button" class="moves__selected-button" (click)="openMoveModal()">
+        <button
+          type="button"
+          class="moves__selected-button"
+          (click)="openMoveModal()"
+          [class.is-empty]="!selected"
+        >
           @if (selected) {
-          <span class="moves__selected-content">
-            @let icon = getMoveIcon(selected);
-            @if (icon) {
-            <img class="moves__selected-icon" [src]="icon" [alt]="selected.type?.name ?? 'tipo'" />
-            } @else if (selected.type?.name) {
-            <span class="moves__selected-type">{{ formatTypeName(selected.type?.name ?? '') }}</span>
-            }
-            <span class="moves__selected-name">{{ selected.name }}</span>
+          @let icon = getMoveIcon(selected);
+          @let typeName = formatTypeName(selected.type?.name ?? '');
+          <span class="moves__selected-chip">
+            <span class="moves__selected-badge" [class.has-icon]="!!icon">
+              @if (icon) {
+              <img class="moves__selected-icon" [src]="icon" [alt]="selected.type?.name ?? 'tipo'" />
+              } @else {
+              <span class="moves__selected-badge-label">
+                {{ typeName ? typeName.slice(0, 3) : '—' }}
+              </span>
+              }
+            </span>
+            <span class="moves__selected-info">
+              <span class="moves__selected-name">{{ selected.name }}</span>
+              @if (typeName) {
+              <span class="moves__selected-type">{{ typeName }}</span>
+              }
+            </span>
           </span>
           } @else {
           <span class="moves__placeholder">Seleccionar movimiento {{ slot + 1 }}</span>
