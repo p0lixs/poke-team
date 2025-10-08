@@ -323,13 +323,16 @@ export class TeamFacade {
       const selectedMoves = [...pokemon.selectedMoves];
       const normalizedDetail = this.mapper.normalizeMoveDetail(detail);
       selectedMoves[slot] = normalizedDetail;
-      if (normalizedDetail?.url && (normalizedDetail.type || normalizedDetail.power !== null)) {
+      if (normalizedDetail?.url) {
         pokemon.moves = pokemon.moves.map((move) =>
           move.url === normalizedDetail.url
             ? {
                 ...move,
                 type: normalizedDetail.type,
                 power: normalizedDetail.power,
+                accuracy: normalizedDetail.accuracy,
+                category: normalizedDetail.category,
+                effect: normalizedDetail.effect,
               }
             : move
         );
