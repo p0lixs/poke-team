@@ -251,7 +251,6 @@ export class PokemonComponent {
     this.moveTableRows = rows;
     rows.forEach((row) => this.ensureMoveIcon(row.type?.url ?? null, row.url));
     this.refreshFilteredMoveRows();
-    this.prefetchMoveDetailsForRows(this.filteredMoveRows.slice(0, 20));
   }
 
   private refreshFilteredMoveRows() {
@@ -266,7 +265,7 @@ export class PokemonComponent {
     } else {
       this.filteredMoveRows = this.moveTableRows.filter((row) => row.searchIndex.includes(term));
     }
-    this.prefetchMoveDetailsForRows(this.filteredMoveRows.slice(0, 20));
+    this.prefetchMoveDetailsForRows(this.filteredMoveRows);
   }
 
   private prefetchMoveDetailsForRows(rows: MoveTableRow[]) {
@@ -278,7 +277,17 @@ export class PokemonComponent {
   }
 
   private ensureMoveDetail(row: MoveTableRow) {
-    if (this.moveDetailCache[row.url] || this.pendingDetailRequests.has(row.url)) {
+    const cached = this.moveDetailCache[row.url];
+
+    if (cached) {
+      if (this.rowNeedsDetailUpdate(row, cached)) {
+        this.applyDetailToRow(cached);
+      }
+      this.ensureMoveIcon(cached.type?.url ?? null, cached.url);
+      return;
+    }
+
+    if (this.pendingDetailRequests.has(row.url)) {
       return;
     }
 
@@ -298,14 +307,7 @@ export class PokemonComponent {
         next: (dto) => {
           const detail = this.mapper.moveDetailFromDto(dto, row.url);
           this.moveDetailCache[row.url] = detail;
-          this.updateMoveRow(row.url, {
-            type: detail.type,
-            power: detail.power,
-            accuracy: detail.accuracy,
-            damageClass: detail.damageClass,
-            effect: detail.effect,
-            typeIcon: this.moveIconUrls[row.url] ?? null,
-          });
+          this.applyDetailToRow(detail);
           this.updateMoveOptionWithDetail(detail);
           this.ensureMoveIcon(detail.type?.url ?? null, detail.url);
         },
@@ -358,6 +360,35 @@ export class PokemonComponent {
         : move
     );
     this.prepareMoveIcons();
+  }
+
+  private applyDetailToRow(detail: PokemonMoveDetailVM) {
+    this.updateMoveRow(detail.url, {
+      type: detail.type,
+      power: detail.power,
+      accuracy: detail.accuracy,
+      damageClass: detail.damageClass,
+      effect: detail.effect,
+      loading: false,
+      typeIcon: this.moveIconUrls[detail.url] ?? null,
+    });
+  }
+
+  private rowNeedsDetailUpdate(
+    row: MoveTableRow,
+    detail: PokemonMoveDetailVM
+  ): boolean {
+    if (row.loading) {
+      return true;
+    }
+
+    return (
+      (row.type?.name ?? null) !== (detail.type?.name ?? null) ||
+      row.power !== detail.power ||
+      row.accuracy !== detail.accuracy ||
+      row.damageClass !== detail.damageClass ||
+      row.effect !== detail.effect
+    );
   }
 
   private ensureMoveIcon(typeUrl: string | null, moveUrl: string) {
