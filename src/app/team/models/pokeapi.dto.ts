@@ -20,5 +20,13 @@ export interface MoveDTO {
   id: number;
   name: string;
   power: number | null;
+  accuracy: number | null;
+  damage_class: { name: string } | null;
   type: { name: string; url: string } | null;
+  effect_entries?: {
+    effect: string;
+    short_effect: string;
+    language: { name: string };
+  }[];
+  effect_chance?: number | null;
 }

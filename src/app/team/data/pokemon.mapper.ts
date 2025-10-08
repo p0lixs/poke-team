@@ -31,6 +31,9 @@ export class PokemonMapper {
           url: move.move.url,
           type: null,
           power: null,
+          accuracy: null,
+          damageClass: null,
+          effect: null,
         })) ?? [],
       selectedMoves: [],
     };
@@ -66,6 +69,9 @@ export class PokemonMapper {
       url,
       type: dto.type && dto.type.url ? { name: dto.type.name, url: dto.type.url } : null,
       power: dto.power ?? null,
+      accuracy: dto.accuracy ?? null,
+      damageClass: dto.damage_class?.name ?? null,
+      effect: this.formatEffectText(dto),
     };
   }
 
@@ -76,6 +82,9 @@ export class PokemonMapper {
       url,
       type: null,
       power: null,
+      accuracy: null,
+      damageClass: null,
+      effect: null,
     };
   }
 
@@ -91,6 +100,9 @@ export class PokemonMapper {
       url: detail.url,
       type,
       power: detail.power ?? null,
+      accuracy: detail.accuracy ?? null,
+      damageClass: detail.damageClass ?? null,
+      effect: detail.effect ?? null,
     };
   }
 
@@ -102,6 +114,34 @@ export class PokemonMapper {
     const normalized = (value ?? '').trim();
     if (!normalized) return 'Movimiento';
     return this.toTitleCase(normalized.replace(/-/g, ' '));
+  }
+
+  private formatEffectText(dto: MoveDTO): string | null {
+    const entries = dto.effect_entries ?? [];
+    if (!entries.length) {
+      return null;
+    }
+
+    const preferred =
+      entries.find((entry) => entry.language?.name === 'es') ??
+      entries.find((entry) => entry.language?.name === 'en') ??
+      entries[0];
+
+    if (!preferred) {
+      return null;
+    }
+
+    const base = preferred.short_effect || preferred.effect;
+    if (!base) {
+      return null;
+    }
+
+    const effectChance = dto.effect_chance ?? null;
+    const normalized = effectChance === null || effectChance === undefined
+      ? base
+      : base.replace(/\$effect_chance/g, String(effectChance));
+
+    return normalized.replace(/\s+/g, ' ').trim();
   }
 
   private normalizeMoveOptions(options: PokemonMoveOptionVM[] | undefined): PokemonMoveOptionVM[] {
@@ -117,6 +157,9 @@ export class PokemonMapper {
         url: option.url,
         type: option.type && option.type.url ? { name: option.type.name, url: option.type.url } : null,
         power: option.power ?? null,
+        accuracy: option.accuracy ?? null,
+        damageClass: option.damageClass ?? null,
+        effect: option.effect ?? null,
       }));
   }
 

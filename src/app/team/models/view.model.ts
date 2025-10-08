@@ -21,6 +21,9 @@ export interface PokemonMoveOptionVM {
   url: string;
   type: { name: string; url: string } | null;
   power: number | null;
+  accuracy: number | null;
+  damageClass: string | null;
+  effect: string | null;
 }
 
 export interface PokemonMoveDetailVM {
@@ -28,6 +31,9 @@ export interface PokemonMoveDetailVM {
   url: string;
   type: { name: string; url: string } | null;
   power: number | null;
+  accuracy: number | null;
+  damageClass: string | null;
+  effect: string | null;
 }
 
 export interface PokemonMoveSelectionPayload {
