@@ -54,13 +54,20 @@ export class PokemonComponent {
   private readonly mapper = inject(PokemonMapper);
 
   @Input() set pokemon(value: PokemonVM) {
+    const normalizedMoves = Array.isArray(value.moves)
+      ? value.moves.map((move) => ({ ...move }))
+      : [];
+    const baseSelected = Array.isArray(value.selectedMoves) ? value.selectedMoves : [];
+    const normalizedSelected = Array.from({ length: this.moveSlots.length }, (_, index) => {
+      const detail = baseSelected[index] ?? null;
+      return detail ? { ...detail } : null;
+    });
+
     this._pokemon = {
       ...value,
       stats: value.stats ?? [],
-      moves: value.moves ?? [],
-      selectedMoves: Array.isArray(value.selectedMoves)
-        ? value.selectedMoves
-        : [null, null, null, null],
+      moves: normalizedMoves,
+      selectedMoves: normalizedSelected,
     };
     this.pendingSelection = this._pokemon.selectedMoves.map((move) => (move ? { ...move } : null));
     this.initializeMoveDetailCache();
@@ -143,13 +150,8 @@ export class PokemonComponent {
     this.closeMoveModal();
   }
 
-  onMoveSelect(slot: number, moveUrl: string | null) {
-    const normalized = moveUrl?.trim() ? moveUrl : null;
-    this.moveChange.emit({
-      pokemonId: this.pokemon.id,
-      slot,
-      moveUrl: normalized,
-    });
+  onRemove() {
+    this.remove.emit(this.pokemon.id);
   }
 
   get pendingSelectionCount(): number {

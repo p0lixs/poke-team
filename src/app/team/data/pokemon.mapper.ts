@@ -64,10 +64,16 @@ export class PokemonMapper {
   }
 
   moveDetailFromDto(dto: MoveDTO, url: string): PokemonMoveDetailVM {
+    const type = dto.type && dto.type.url ? { name: dto.type.name, url: dto.type.url } : null;
+    const category = dto.damage_class?.name
+      ? this.toTitleCase(dto.damage_class.name.replace(/-/g, ' '))
+      : null;
+    const effect = this.extractEffectText(dto.effect_entries, dto.effect_chance);
+
     return {
       name: this.formatMoveName(dto.name),
       url,
-      type: dto.type && dto.type.url ? { name: dto.type.name, url: dto.type.url } : null,
+      type,
       power: dto.power ?? null,
       accuracy: dto.accuracy ?? null,
       damageClass: dto.damage_class?.name ?? null,
@@ -94,6 +100,8 @@ export class PokemonMapper {
     }
 
     const type = detail.type && detail.type.url ? { name: detail.type.name, url: detail.type.url } : null;
+    const category = detail.category ? this.toTitleCase(detail.category.replace(/-/g, ' ')) : null;
+    const effect = this.normalizeEffect(detail.effect);
 
     return {
       name: this.formatMoveName(detail.name ?? this.extractNameFromUrl(detail.url)),
@@ -104,6 +112,42 @@ export class PokemonMapper {
       damageClass: detail.damageClass ?? null,
       effect: detail.effect ?? null,
     };
+  }
+
+  private extractEffectText(
+    entries: MoveDTO['effect_entries'] | undefined,
+    chance: number | null
+  ): string | null {
+    if (!Array.isArray(entries) || !entries.length) {
+      return null;
+    }
+
+    const preferred =
+      entries.find((entry) => entry.language?.name === 'es') ??
+      entries.find((entry) => entry.language?.name === 'en');
+
+    const raw = preferred?.short_effect ?? preferred?.effect ?? '';
+    if (!raw.trim()) {
+      return null;
+    }
+
+    const normalizedChance = typeof chance === 'number' ? String(chance) : '';
+    const withChance = raw.replace(/\$effect_chance/gi, normalizedChance);
+
+    return this.normalizeEffect(withChance);
+  }
+
+  private normalizeEffect(effect: string | null | undefined): string | null {
+    if (!effect) {
+      return null;
+    }
+
+    const normalized = effect
+      .replace(/[\u000b\u000c]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return normalized.length ? normalized : null;
   }
 
   private toTitleCase(value: string): string {

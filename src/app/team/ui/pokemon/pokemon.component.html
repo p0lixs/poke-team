@@ -78,8 +78,114 @@
         </button>
       </li>
       }
+      }
     </ul>
+    } @else {
+    <p class="moves__empty">No hay movimientos seleccionados. Pulsa en «Editar movimientos» para elegir hasta
+      cuatro.</p>
+    }
   </section>
+  }
+
+  @if (isMoveModalOpen) {
+  <div class="moves-modal" role="dialog" aria-modal="true" [attr.aria-labelledby]="'moves-modal-title-' + pokemon.id">
+    <div class="moves-modal__backdrop" (click)="closeMovesModal()"></div>
+    <div class="moves-modal__dialog" role="document">
+      <header class="moves-modal__header">
+        <h5 class="moves-modal__title" [id]="'moves-modal-title-' + pokemon.id">Selecciona movimientos</h5>
+        <button type="button" class="moves-modal__close" (click)="closeMovesModal()" aria-label="Cerrar">×</button>
+      </header>
+
+      <div class="moves-modal__content">
+        <div class="moves-modal__search">
+          <label class="moves-modal__search-label" [attr.for]="'move-search-' + pokemon.id">Buscar movimiento</label>
+          <input class="moves-modal__search-input" type="text" [id]="'move-search-' + pokemon.id"
+            [ngModel]="moveSearchTerm" (ngModelChange)="onSearchTermChange($event)"
+            placeholder="Empieza a escribir el nombre" />
+        </div>
+
+        <div class="moves-modal__selected">
+          <h6 class="moves-modal__selected-title">Seleccionados ({{ pendingSelectedMovesCount }}/4)</h6>
+          <ul class="moves-modal__selected-list">
+            @for (slot of moveSlots; track slot) {
+            @let pending = pendingSelectedMoves[slot];
+            <li class="moves-modal__selected-item" [class.is-filled]="!!pending">
+              <div class="moves-modal__slot">
+                <span class="moves-modal__slot-label">Movimiento {{ slot + 1 }}</span>
+                @if (pending) {
+                <div class="moves-modal__slot-move">
+                  @if (getMoveIcon(pending); as icon) {
+                  <img class="moves-modal__slot-icon" [src]="icon" [alt]="pending.type?.name ?? 'tipo'" />
+                  } @else if (pending.type?.name) {
+                  <span class="moves-modal__slot-type">{{ formatTypeName(pending.type?.name ?? '') }}</span>
+                  }
+                  <span class="moves-modal__slot-name">{{ pending.name }}</span>
+                </div>
+                } @else {
+                <span class="moves-modal__slot-empty">Vacío</span>
+                }
+              </div>
+              @if (pending) {
+              <button type="button" class="moves-modal__remove"
+                (click)="removePendingMove(slot); $event.stopPropagation()">Quitar</button>
+              }
+            </li>
+            }
+          </ul>
+        </div>
+
+        <div class="moves-modal__table-wrapper">
+          <table class="moves-modal__table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Poder</th>
+                <th>Precisión</th>
+                <th>Categoría</th>
+                <th>Efecto</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (move of filteredMoves; track move.url) {
+              <tr (click)="onMoveRowClick(move)" [class.is-selected]="isMoveSelected(move)"
+                [class.is-disabled]="!isMoveSelected(move) && !canSelectMoreMoves()">
+                <td class="moves-modal__cell-name">{{ move.label }}</td>
+                <td class="moves-modal__cell-type">
+                  @if (getMoveIcon(move); as icon) {
+                  <img class="moves-modal__table-icon" [src]="icon" [alt]="move.type?.name ?? 'tipo'" />
+                  } @else if (move.type?.name) {
+                  <span class="moves-modal__table-type">{{ formatTypeName(move.type?.name ?? '') }}</span>
+                  } @else {
+                  <span class="moves-modal__table-type moves-modal__table-type--unknown">—</span>
+                  }
+                </td>
+                <td class="moves-modal__cell-number">{{ move.power ?? '—' }}</td>
+                <td class="moves-modal__cell-number">{{ move.accuracy !== null ? move.accuracy + '%' : '—' }}</td>
+                <td>{{ move.category ?? '—' }}</td>
+                <td class="moves-modal__effect">{{ move.effect ?? '—' }}</td>
+              </tr>
+              }
+              @if (!filteredMoves.length) {
+              <tr>
+                <td class="moves-modal__empty" colspan="6">No se han encontrado movimientos que coincidan.</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <footer class="moves-modal__footer">
+        <button type="button" class="moves-modal__button moves-modal__button--ghost" (click)="closeMovesModal()">
+          Cancelar
+        </button>
+        <button type="button" class="moves-modal__button" (click)="confirmMovesSelection()">
+          Guardar movimientos
+        </button>
+      </footer>
+    </div>
+  </div>
   }
 
   <footer class="actions">
