@@ -117,6 +117,10 @@
     font-weight: 600;
   }
 }
+::ng-deep .ng-dropdown-panel {
+  display: none;
+}
+
 .moves {
   display: flex;
   flex-direction: column;
@@ -126,7 +130,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
   }
 
   &__title {
@@ -134,28 +137,24 @@
     font-size: 0.875rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: #4b5563;
   }
 
-  &__edit-button {
-    appearance: none;
-    border: 0;
-    border-radius: 9999px;
-    padding: 0.4rem 0.9rem;
-    font-size: 0.85rem;
+  &__manage {
+    border: 1px solid #6366f1;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #f9fafb;
-    background: #6366f1;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
     cursor: pointer;
-    transition: background-color 0.15s ease;
-
-    &:hover {
-      background: #4f46e5;
-    }
   }
 
   &__selected-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
     list-style: none;
     margin: 0;
     padding: 0;
@@ -164,233 +163,53 @@
     gap: 0.5rem;
   }
 
-  &__selected-item {
+  &__selected-button {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 0.75rem;
+    background: #f9fafb;
+    padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.45rem 0.75rem;
-    border-radius: 0.65rem;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    gap: 0.5rem;
+    min-height: 3rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  &__selected-icon,
+  &__selected-type {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
   }
 
   &__selected-icon {
-    width: 4.5rem;
-    height: 1.5rem;
+    width: 60px;
+    height: 18px;
     object-fit: contain;
   }
 
   &__selected-type {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.1rem 0.5rem;
-    border-radius: 9999px;
-    background: #e0e7ff;
-    color: #4338ca;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    color: #0369a1;
   }
 
   &__selected-name {
-    font-weight: 600;
+    font-size: 0.85rem;
     color: #111827;
-    font-size: 0.95rem;
   }
 
-  &__empty {
-    margin: 0;
-    font-size: 0.85rem;
+  &__placeholder {
+    font-size: 0.8rem;
     color: #6b7280;
-    background: #f9fafb;
-    border-radius: 0.65rem;
-    padding: 0.75rem;
-    border: 1px dashed #cbd5f5;
   }
-}
+
 
 /* Footer pegado abajo para acciones consistentes */
 .actions {
   margin-top: auto; /* empuja el footer al fondo */
   display: flex;
   justify-content: flex-end;
-
-  .btn-remove {
-    appearance: none;
-    border: 0;
-    background: #fee2e2;
-    color: #991b1b;
-    font-weight: 600;
-    padding: 0.35rem 0.6rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-
-    &:hover {
-      background: #fecaca;
-    }
-  }
-}
-
-.moves-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-
-  &__backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.45);
-    backdrop-filter: blur(2px);
-  }
-
-  &__dialog {
-    position: relative;
-    width: min(960px, 100%);
-    max-height: min(90vh, 720px);
-    background: #fff;
-    border-radius: 0.85rem;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 1.1rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-    background: #f8fafc;
-  }
-
-  &__title {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #1f2937;
-  }
-
-  &__close {
-    appearance: none;
-    border: 0;
-    background: transparent;
-    font-size: 1.5rem;
-    line-height: 1;
-    color: #6b7280;
-    cursor: pointer;
-  }
-
-  &__content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    padding: 1.25rem 1.5rem 1.5rem;
-  }
-
-  &__search {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  &__search-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #4b5563;
-  }
-
-  &__search-input {
-    border: 1px solid #d1d5db;
-    border-radius: 0.65rem;
-    padding: 0.55rem 0.75rem;
-    font-size: 0.95rem;
-    &:focus {
-      outline: none;
-      border-color: #6366f1;
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-    }
-  }
-
-  &__selected {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  &__selected-title {
-    margin: 0;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #374151;
-  }
-
-  &__selected-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.6rem;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  }
-
-  &__selected-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.75rem;
-    padding: 0.55rem 0.75rem;
-  }
-
-  &__slot {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-  }
-
-  &__slot-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6b7280;
-  }
-
-  &__slot-move {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-  }
-
-  &__slot-icon {
-    width: 4.25rem;
-    height: 1.4rem;
-    object-fit: contain;
-  }
-
-  &__slot-type {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.1rem 0.5rem;
-    border-radius: 9999px;
-    background: #eef2ff;
-    color: #4338ca;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-  }
 
   &__slot-name {
     font-weight: 600;

@@ -22,7 +22,7 @@ export interface PokemonMoveOptionVM {
   type: { name: string; url: string } | null;
   power: number | null;
   accuracy: number | null;
-  category: string | null;
+  damageClass: string | null;
   effect: string | null;
 }
 
@@ -32,7 +32,7 @@ export interface PokemonMoveDetailVM {
   type: { name: string; url: string } | null;
   power: number | null;
   accuracy: number | null;
-  category: string | null;
+  damageClass: string | null;
   effect: string | null;
 }
 

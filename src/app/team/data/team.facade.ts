@@ -331,7 +331,7 @@ export class TeamFacade {
                 type: normalizedDetail.type,
                 power: normalizedDetail.power,
                 accuracy: normalizedDetail.accuracy,
-                category: normalizedDetail.category,
+                damageClass: normalizedDetail.damageClass,
                 effect: normalizedDetail.effect,
               }
             : move

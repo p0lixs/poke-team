@@ -32,7 +32,7 @@ export class PokemonMapper {
           type: null,
           power: null,
           accuracy: null,
-          category: null,
+          damageClass: null,
           effect: null,
         })) ?? [],
       selectedMoves: [],
@@ -76,8 +76,8 @@ export class PokemonMapper {
       type,
       power: dto.power ?? null,
       accuracy: dto.accuracy ?? null,
-      category,
-      effect,
+      damageClass: dto.damage_class?.name ?? null,
+      effect: this.formatEffectText(dto),
     };
   }
 
@@ -89,7 +89,7 @@ export class PokemonMapper {
       type: null,
       power: null,
       accuracy: null,
-      category: null,
+      damageClass: null,
       effect: null,
     };
   }
@@ -109,8 +109,8 @@ export class PokemonMapper {
       type,
       power: detail.power ?? null,
       accuracy: detail.accuracy ?? null,
-      category,
-      effect,
+      damageClass: detail.damageClass ?? null,
+      effect: detail.effect ?? null,
     };
   }
 
@@ -160,6 +160,34 @@ export class PokemonMapper {
     return this.toTitleCase(normalized.replace(/-/g, ' '));
   }
 
+  private formatEffectText(dto: MoveDTO): string | null {
+    const entries = dto.effect_entries ?? [];
+    if (!entries.length) {
+      return null;
+    }
+
+    const preferred =
+      entries.find((entry) => entry.language?.name === 'es') ??
+      entries.find((entry) => entry.language?.name === 'en') ??
+      entries[0];
+
+    if (!preferred) {
+      return null;
+    }
+
+    const base = preferred.short_effect || preferred.effect;
+    if (!base) {
+      return null;
+    }
+
+    const effectChance = dto.effect_chance ?? null;
+    const normalized = effectChance === null || effectChance === undefined
+      ? base
+      : base.replace(/\$effect_chance/g, String(effectChance));
+
+    return normalized.replace(/\s+/g, ' ').trim();
+  }
+
   private normalizeMoveOptions(options: PokemonMoveOptionVM[] | undefined): PokemonMoveOptionVM[] {
     if (!Array.isArray(options)) {
       return [];
@@ -174,8 +202,8 @@ export class PokemonMapper {
         type: option.type && option.type.url ? { name: option.type.name, url: option.type.url } : null,
         power: option.power ?? null,
         accuracy: option.accuracy ?? null,
-        category: option.category ? this.toTitleCase(option.category.replace(/-/g, ' ')) : null,
-        effect: this.normalizeEffect(option.effect),
+        damageClass: option.damageClass ?? null,
+        effect: option.effect ?? null,
       }));
   }
 
