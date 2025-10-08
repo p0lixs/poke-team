@@ -160,11 +160,14 @@ export class TeamFacade {
     const exists = this.team().some((x) => x.id === p.id);
     if (exists) return; // evitar duplicados
     const pokemon = this.mapper.normalizeVM(p);
+    this.cacheMoveDetailsFromPokemon(pokemon);
     this.team.update((arr) => {
       const next = [...arr, pokemon];
       this.syncDraftMembers(next);
       return next;
     });
+    this.applyCachedMoveDetailsToPokemon(pokemon.id);
+    this.prefetchMoveDetailsForPokemon(pokemon);
   }
 
   removeFromTeam(id: number) {
@@ -345,11 +348,131 @@ export class TeamFacade {
   }
 
   private normalizeTeamMembers(members: PokemonVM[]): PokemonVM[] {
-    return (members ?? []).map((member) => this.mapper.normalizeVM(member));
+    return (members ?? []).map((member) => {
+      const normalized = this.mapper.normalizeVM(member);
+      this.cacheMoveDetailsFromPokemon(normalized);
+      return normalized;
+    });
   }
 
   private normalizeName(name: string) {
     const trimmed = name.trim();
     return trimmed.length ? trimmed : 'Equipo sin nombre';
+  }
+
+  private cacheMoveDetailsFromPokemon(pokemon: PokemonVM) {
+    pokemon.selectedMoves
+      ?.filter((move): move is PokemonMoveDetailVM => !!move?.url)
+      .forEach((move) => {
+        const detail = this.mapper.normalizeMoveDetail(move);
+        if (this.hasMoveDetailInfo(detail)) {
+          this.moveDetailsCache.set(detail.url, detail);
+        }
+      });
+
+    pokemon.moves
+      ?.filter((move) => !!move?.url)
+      .forEach((move) => {
+        const detail = this.mapper.normalizeMoveDetail({
+          name: move.label ?? move.name,
+          url: move.url,
+          type: move.type,
+          power: move.power,
+          accuracy: move.accuracy,
+          damageClass: move.damageClass,
+          effect: move.effect,
+        });
+
+        if (this.hasMoveDetailInfo(detail)) {
+          this.moveDetailsCache.set(detail.url, detail);
+        }
+      });
+  }
+
+  private applyCachedMoveDetailsToPokemon(pokemonId: number) {
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.mapper.normalizeVM(nextTeam[index]);
+      pokemon.moves = pokemon.moves.map((move) => {
+        const detail = this.moveDetailsCache.get(move.url);
+        if (!detail) {
+          return move;
+        }
+
+        return {
+          ...move,
+          type: detail.type,
+          power: detail.power,
+          accuracy: detail.accuracy,
+          damageClass: detail.damageClass,
+          effect: detail.effect,
+        };
+      });
+
+      pokemon.selectedMoves = pokemon.selectedMoves.map((move) => {
+        if (!move?.url) {
+          return move;
+        }
+
+        const detail = this.moveDetailsCache.get(move.url) ?? move;
+        return this.mapper.normalizeMoveDetail(detail);
+      });
+
+      nextTeam[index] = pokemon;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
+  }
+
+  private prefetchMoveDetailsForPokemon(pokemon: PokemonVM) {
+    const moves = pokemon.moves ?? [];
+    const missingUrls = moves
+      .map((move) => move.url)
+      .filter((url) => !!url && !this.moveDetailsCache.has(url));
+
+    if (!missingUrls.length) {
+      return;
+    }
+
+    forkJoin(
+      missingUrls.map((url) =>
+        this.api
+          .getMoveByUrl(url)
+          .pipe(take(1), map((dto) => this.mapper.moveDetailFromDto(dto, url)))
+      )
+    ).subscribe({
+      next: (details) => {
+        details.forEach((detail) => {
+          if (this.hasMoveDetailInfo(detail)) {
+            this.moveDetailsCache.set(detail.url, detail);
+          }
+        });
+        this.applyCachedMoveDetailsToPokemon(pokemon.id);
+      },
+      error: (error) => {
+        console.error('Error preloading move details', error);
+      },
+    });
+  }
+
+  private hasMoveDetailInfo(
+    detail: PokemonMoveDetailVM | null | undefined
+  ): detail is PokemonMoveDetailVM {
+    if (!detail) {
+      return false;
+    }
+
+    return (
+      !!detail.type ||
+      detail.power !== null ||
+      detail.accuracy !== null ||
+      !!detail.damageClass ||
+      !!detail.effect
+    );
   }
 }
