@@ -1,7 +1,14 @@
 import { Injectable, WritableSignal, computed, effect, inject, signal } from '@angular/core';
 import { PokemonApi } from './pokemon.api';
 import { PokemonMapper } from './pokemon.mapper';
-import { PokemonMoveDetailVM, PokemonMoveSelectionPayload, PokemonVM } from '../models/view.model';
+import {
+  PokemonAbilitySelectionPayload,
+  PokemonItemOptionVM,
+  PokemonItemSelectionPayload,
+  PokemonMoveDetailVM,
+  PokemonMoveSelectionPayload,
+  PokemonVM,
+} from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
 import { PokemonDTO } from '../models/pokeapi.dto';
@@ -18,6 +25,7 @@ export class TeamFacade {
   private readonly teamLoaded = signal(false);
   private readonly lastSynced = signal<Map<string, string>>(new Map());
   private readonly moveDetailsCache = new Map<string, PokemonMoveDetailVM>();
+  readonly itemOptions = signal<PokemonItemOptionVM[]>([]);
   private readonly newTeamDraft = signal<{ name: string; members: PokemonVM[] }>({
     name: 'New team',
     members: [],
@@ -55,6 +63,22 @@ export class TeamFacade {
       .subscribe({
         next: (names) => this.allNames.set(names),
         error: () => this.error.set('Unable to load the Pokémon list'),
+      });
+
+    this.api
+      .getAllItems()
+      .pipe(take(1))
+      .subscribe({
+        next: (items) => {
+          const options = (items ?? [])
+            .map((item) => this.mapper.itemOptionFromResource(item))
+            .filter((option): option is PokemonItemOptionVM => !!option)
+            .sort((a, b) => a.label.localeCompare(b.label));
+          this.itemOptions.set(options);
+        },
+        error: (error) => {
+          console.error('Unable to load items from the API', error);
+        },
       });
 
     // Load saved teams once
@@ -261,6 +285,51 @@ export class TeamFacade {
 
   private serialize(name: string, members: PokemonVM[]) {
     return JSON.stringify({ name, members });
+  }
+
+  changePokemonAbility(change: PokemonAbilitySelectionPayload) {
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === change.pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.mapper.normalizeVM(nextTeam[index]);
+      const normalizedUrl = change.abilityUrl?.trim();
+
+      const selectedAbility = normalizedUrl
+        ? pokemon.abilityOptions.find((ability) => ability.url === normalizedUrl) ??
+          this.mapper.abilityOptionFromUrl(normalizedUrl)
+        : pokemon.abilityOptions[0] ?? null;
+
+      pokemon.selectedAbility = selectedAbility;
+      nextTeam[index] = pokemon;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
+  }
+
+  changePokemonItem(change: PokemonItemSelectionPayload) {
+    const items = this.itemOptions();
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === change.pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.mapper.normalizeVM(nextTeam[index]);
+      const normalizedUrl = change.itemUrl?.trim();
+      const selectedItem = normalizedUrl
+        ? items.find((item) => item.url === normalizedUrl) ?? this.mapper.itemOptionFromUrl(normalizedUrl) ?? null
+        : null;
+
+      pokemon.heldItem = selectedItem;
+      nextTeam[index] = pokemon;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
   }
 
   changePokemonMove(change: PokemonMoveSelectionPayload) {

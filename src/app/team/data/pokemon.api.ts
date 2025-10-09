@@ -1,7 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { MoveDTO, PokemonDTO, PokemonListResponse } from '../models/pokeapi.dto';
+import {
+  ItemListResponse,
+  MoveDTO,
+  PokemonDTO,
+  PokemonListResponse,
+  NamedAPIResource,
+} from '../models/pokeapi.dto';
 
 const API = 'https://pokeapi.co/api/v2';
 
@@ -22,5 +28,11 @@ export class PokemonApi {
 
   getMoveByUrl(url: string): Observable<MoveDTO> {
     return this.http.get<MoveDTO>(url);
+  }
+
+  getAllItems(): Observable<NamedAPIResource[]> {
+    return this.http
+      .get<ItemListResponse>(`${API}/item?limit=1000&offset=0`)
+      .pipe(map((response) => response.results ?? []));
   }
 }

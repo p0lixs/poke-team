@@ -18,6 +18,33 @@
     </div>
   </header>
 
+  <section class="loadout">
+    @if (pokemon.abilityOptions.length) {
+    <label class="loadout__field">
+      <span class="loadout__label">Ability</span>
+      <select class="loadout__select" [ngModel]="selectedAbilityUrl" (ngModelChange)="handleAbilityChange($event)">
+        @for (ability of pokemon.abilityOptions; track ability.url) {
+        <option [value]="ability.url">{{ formatAbilityLabel(ability) }}</option>
+        }
+      </select>
+    </label>
+    }
+
+    <label class="loadout__field">
+      <span class="loadout__label">Held item</span>
+      <select class="loadout__select" [ngModel]="selectedItemUrl" (ngModelChange)="handleItemChange($event)">
+        <option value="">None</option>
+        @if (items.length) {
+        @for (item of items; track item.url) {
+        <option [value]="item.url">{{ item.label }}</option>
+        }
+        } @else {
+        <option value="__loading" disabled>Loading items…</option>
+        }
+      </select>
+    </label>
+  </section>
+
   @if (pokemon.stats.length) {
   <section class="stats">
     <h4 class="stats__title">Statistics</h4>
