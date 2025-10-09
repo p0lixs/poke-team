@@ -59,12 +59,16 @@ export class PokemonComponent {
 
   isMoveModalOpen = false;
   moveSearchTerm = '';
+  itemSearchTerm = '';
   moveTableRows: MoveTableRow[] = [];
   filteredMoveRows: MoveTableRow[] = [];
   pendingSelection: (PokemonMoveDetailVM | null)[] = [null, null, null, null];
   selectedAbilityUrl = '';
   selectedItemUrl = '';
   isItemDropdownOpen = false;
+  filteredItems: PokemonItemOptionVM[] = [];
+
+  private _items: PokemonItemOptionVM[] = [];
 
   private readonly typeIcons = inject(TypeIconService);
   private readonly api = inject(PokemonApi);
@@ -96,7 +100,13 @@ export class PokemonComponent {
   }
 
   @Input() showRemove = true;
-  @Input() items: PokemonItemOptionVM[] = [];
+  @Input() set items(value: PokemonItemOptionVM[]) {
+    this._items = value ?? [];
+    this.refreshFilteredItems();
+  }
+  get items(): PokemonItemOptionVM[] {
+    return this._items;
+  }
   @Output() remove = new EventEmitter<number>();
   @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
   @Output() abilityChange = new EventEmitter<PokemonAbilitySelectionPayload>();
@@ -226,7 +236,13 @@ export class PokemonComponent {
   toggleItemDropdown(event?: MouseEvent) {
     event?.preventDefault();
     event?.stopPropagation();
-    this.isItemDropdownOpen = !this.isItemDropdownOpen;
+    const willOpen = !this.isItemDropdownOpen;
+    this.isItemDropdownOpen = willOpen;
+
+    if (willOpen) {
+      this.itemSearchTerm = '';
+      this.refreshFilteredItems();
+    }
   }
 
   selectItem(url: string | null, event?: MouseEvent) {
@@ -235,6 +251,10 @@ export class PokemonComponent {
 
     this.isItemDropdownOpen = false;
     this.handleItemChange(url);
+  }
+
+  onItemSearchTermChange() {
+    this.refreshFilteredItems();
   }
 
   @HostListener('document:click', ['$event'])
@@ -345,6 +365,21 @@ export class PokemonComponent {
       if (detail) {
         this.moveDetailCache[move.url] = detail;
       }
+    });
+  }
+
+  private refreshFilteredItems() {
+    const term = this.itemSearchTerm.trim().toLowerCase();
+
+    if (!term) {
+      this.filteredItems = [...this.items];
+      return;
+    }
+
+    this.filteredItems = this.items.filter((item) => {
+      const label = item.label?.toLowerCase() ?? '';
+      const name = item.name?.toLowerCase() ?? '';
+      return label.includes(term) || name.includes(term);
     });
   }
 
