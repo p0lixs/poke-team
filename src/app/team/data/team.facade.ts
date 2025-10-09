@@ -19,7 +19,7 @@ export class TeamFacade {
   private readonly lastSynced = signal<Map<string, string>>(new Map());
   private readonly moveDetailsCache = new Map<string, PokemonMoveDetailVM>();
   private readonly newTeamDraft = signal<{ name: string; members: PokemonVM[] }>({
-    name: 'Nuevo equipo',
+    name: 'New team',
     members: [],
   });
 
@@ -40,7 +40,7 @@ export class TeamFacade {
 
   // --- Team state ---
   readonly team = signal<PokemonVM[]>([]);
-  readonly teamName = signal('Nuevo equipo');
+  readonly teamName = signal('New team');
   readonly savedTeams = signal<SavedTeam[]>([]);
   readonly selectedTeamId = signal<string | null>(null);
   readonly canAdd = computed(() => this.team().length < MAX_TEAM);
@@ -54,7 +54,7 @@ export class TeamFacade {
       .pipe(take(1))
       .subscribe({
         next: (names) => this.allNames.set(names),
-        error: () => this.error.set('No se pudo cargar la lista de Pokémon'),
+        error: () => this.error.set('Unable to load the Pokémon list'),
       });
 
     // Load saved teams once
@@ -149,7 +149,7 @@ export class TeamFacade {
         },
         error: (err) => {
           console.error(err);
-          this.error.set('Error de búsqueda');
+          this.error.set('Search error');
           this.loading.set(false);
         },
       });
@@ -158,7 +158,7 @@ export class TeamFacade {
   async addToTeam(p: PokemonVM) {
     if (!this.canAdd()) return;
     const exists = this.team().some((x) => x.id === p.id);
-    if (exists) return; // evitar duplicados
+    if (exists) return; // avoid duplicates
     const pokemon = this.mapper.normalizeVM(p);
     this.cacheMoveDetailsFromPokemon(pokemon);
     this.team.update((arr) => {
@@ -236,7 +236,7 @@ export class TeamFacade {
       this.savedTeams.update((list) => [...list, newTeam]);
       this.selectedTeamId.set(id);
       this.updateLastSynced(id, normalizedName, members);
-      this.newTeamDraft.set({ name: 'Nuevo equipo', members: [] });
+      this.newTeamDraft.set({ name: 'New team', members: [] });
     } catch (error) {
       console.error(error);
     }
@@ -357,7 +357,7 @@ export class TeamFacade {
 
   private normalizeName(name: string) {
     const trimmed = name.trim();
-    return trimmed.length ? trimmed : 'Equipo sin nombre';
+    return trimmed.length ? trimmed : 'Unnamed team';
   }
 
   private cacheMoveDetailsFromPokemon(pokemon: PokemonVM) {

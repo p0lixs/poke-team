@@ -25,7 +25,7 @@ export class TeamPanelComponent {
   @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
   @Output() renameTeam = new EventEmitter<{ id: string; name: string }>();
 
-  // Estado UI
+  // UI state
   editMode: EditMode = 'none';
   tempName = '';
   trackById(_i: number, p: PokemonVM) {
@@ -37,13 +37,13 @@ export class TeamPanelComponent {
   }
 
   onSelectChange(value: string) {
-    // Ya no existe la opción 'new': solo ids reales
+    // The "new" option no longer exists: only real ids
     this.selectTeam.emit(value || null);
   }
   startAdd() {
     this.editMode = 'add';
     this.tempName = '';
-    // opcional: al añadir, des-seleccionamos el equipo actual
+    // optional: when adding, deselect the current team
     this.selectTeam.emit(null);
   }
 
@@ -64,13 +64,13 @@ export class TeamPanelComponent {
     if (!name) return;
 
     if (this.editMode === 'add') {
-      // Ajustamos el nombre e invocamos la creación
+      // Normalize the name and trigger creation
       this.teamNameChange.emit(name);
       this.createTeam.emit();
       this.editMode = 'none';
       this.tempName = '';
     } else if (this.editMode === 'edit' && this.selectedTeamId) {
-      // Emitimos renombrado y sincronizamos nombre visible
+      // Emit the rename event and synchronize the visible name
       this.renameTeam.emit({ id: this.selectedTeamId, name });
       this.teamNameChange.emit(name);
       this.editMode = 'none';

@@ -23,7 +23,7 @@ export class TeamRepository {
         const data = (docSnapshot.data() as TeamDocument | undefined) ?? {};
         return {
           id: docSnapshot.id,
-          name: (data.name ?? '').trim() || 'Equipo sin nombre',
+          name: (data.name ?? '').trim() || 'Unnamed team',
           members: Array.isArray(data.members) ? data.members : [],
         } satisfies SavedTeam;
       });

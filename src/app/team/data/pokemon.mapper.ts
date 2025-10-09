@@ -112,7 +112,7 @@ export class PokemonMapper {
 
   private formatMoveName(value: string | undefined | null): string {
     const normalized = (value ?? '').trim();
-    if (!normalized) return 'Movimiento';
+    if (!normalized) return 'Move';
     return this.toTitleCase(normalized.replace(/-/g, ' '));
   }
 
@@ -123,8 +123,8 @@ export class PokemonMapper {
     }
 
     const preferred =
-      entries.find((entry) => entry.language?.name === 'es') ??
       entries.find((entry) => entry.language?.name === 'en') ??
+      entries.find((entry) => entry.language?.name === 'es') ??
       entries[0];
 
     if (!preferred) {
