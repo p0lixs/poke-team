@@ -22,12 +22,15 @@
             [teamName]="facade.teamName()"
             [savedTeams]="facade.savedTeams()"
             [selectedTeamId]="facade.selectedTeamId()"
+            [items]="facade.itemOptions()"
             (teamNameChange)="facade.setTeamName($event)"
             (selectTeam)="facade.selectTeam($event)"
             (createTeam)="facade.createCurrentTeam()"
             (remove)="facade.removeFromTeam($event)"
             (clear)="facade.clearTeam()"
             (moveChange)="facade.changePokemonMove($event)"
+            (abilityChange)="facade.changePokemonAbility($event)"
+            (itemChange)="facade.changePokemonItem($event)"
         />
     </aside>
 </div>

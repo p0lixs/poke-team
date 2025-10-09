@@ -41,7 +41,14 @@
   @if (team.length) {
   <div class="team-grid">
     @for (p of team; track trackById($index, p)) {
-    <app-pokemon [pokemon]="p" (remove)="remove.emit($event)" (moveChange)="moveChange.emit($event)"></app-pokemon>
+    <app-pokemon
+      [pokemon]="p"
+      [items]="items"
+      (remove)="remove.emit($event)"
+      (moveChange)="moveChange.emit($event)"
+      (abilityChange)="abilityChange.emit($event)"
+      (itemChange)="itemChange.emit($event)"
+    ></app-pokemon>
     }
   </div>
   } @else {

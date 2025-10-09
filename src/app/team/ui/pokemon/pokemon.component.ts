@@ -10,6 +10,10 @@ import { PokemonApi } from '../../data/pokemon.api';
 import { PokemonMapper } from '../../data/pokemon.mapper';
 import { TypeIconService } from '../../data/type-icon.service';
 import {
+  PokemonAbilityOptionVM,
+  PokemonAbilitySelectionPayload,
+  PokemonItemOptionVM,
+  PokemonItemSelectionPayload,
   PokemonMoveDetailVM,
   PokemonMoveOptionVM,
   PokemonMoveSelectionPayload,
@@ -50,6 +54,8 @@ export class PokemonComponent {
   moveTableRows: MoveTableRow[] = [];
   filteredMoveRows: MoveTableRow[] = [];
   pendingSelection: (PokemonMoveDetailVM | null)[] = [null, null, null, null];
+  selectedAbilityUrl = '';
+  selectedItemUrl = '';
 
   private readonly typeIcons = inject(TypeIconService);
   private readonly api = inject(PokemonApi);
@@ -65,6 +71,8 @@ export class PokemonComponent {
         : [null, null, null, null],
     };
     this.pendingSelection = this._pokemon.selectedMoves.map((move) => (move ? { ...move } : null));
+    this.selectedAbilityUrl = this._pokemon.selectedAbility?.url ?? '';
+    this.selectedItemUrl = this._pokemon.heldItem?.url ?? '';
     this.initializeMoveDetailCache();
     this.prepareMoveIcons();
     this.ensureAllMoveDetailsLoaded().subscribe(() => {
@@ -78,8 +86,11 @@ export class PokemonComponent {
   }
 
   @Input() showRemove = true;
+  @Input() items: PokemonItemOptionVM[] = [];
   @Output() remove = new EventEmitter<number>();
   @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
+  @Output() abilityChange = new EventEmitter<PokemonAbilitySelectionPayload>();
+  @Output() itemChange = new EventEmitter<PokemonItemSelectionPayload>();
 
   onRemove() {
     this.remove.emit(this.pokemon.id);
@@ -172,6 +183,27 @@ export class PokemonComponent {
     });
   }
 
+  handleAbilityChange(url: string) {
+    const normalized = url?.trim() ?? '';
+    this.selectedAbilityUrl = normalized;
+    this.abilityChange.emit({
+      pokemonId: this.pokemon.id,
+      abilityUrl: normalized || null,
+    });
+  }
+
+  handleItemChange(url: string) {
+    const normalized = url?.trim() ?? '';
+    if (normalized === '__loading') {
+      return;
+    }
+    this.selectedItemUrl = normalized;
+    this.itemChange.emit({
+      pokemonId: this.pokemon.id,
+      itemUrl: normalized || null,
+    });
+  }
+
   get pendingSelectionCount(): number {
     return this.pendingSelection.filter((move) => !!move).length;
   }
@@ -198,6 +230,11 @@ export class PokemonComponent {
     }
 
     return this.toTitleCase(value);
+  }
+
+  formatAbilityLabel(option: PokemonAbilityOptionVM): string {
+    const base = option.label;
+    return option.isHidden ? `${base} (Hidden)` : base;
   }
 
   getStatPercentage(stat: PokemonStatVM): number {

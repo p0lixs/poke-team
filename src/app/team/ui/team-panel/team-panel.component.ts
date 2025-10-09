@@ -1,6 +1,12 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PokemonMoveSelectionPayload, PokemonVM } from '../../models/view.model';
+import {
+  PokemonAbilitySelectionPayload,
+  PokemonItemOptionVM,
+  PokemonItemSelectionPayload,
+  PokemonMoveSelectionPayload,
+  PokemonVM,
+} from '../../models/view.model';
 import { SavedTeam } from '../../models/team.model';
 import { PokemonComponent } from '../pokemon/pokemon.component';
 type EditMode = 'none' | 'add' | 'edit';
@@ -17,12 +23,15 @@ export class TeamPanelComponent {
   @Input({ required: true }) teamName = '';
   @Input({ required: true }) savedTeams: SavedTeam[] = [];
   @Input({ required: true }) selectedTeamId: string | null = null;
+  @Input({ required: true }) items: PokemonItemOptionVM[] = [];
   @Output() remove = new EventEmitter<number>();
   @Output() clear = new EventEmitter<void>();
   @Output() teamNameChange = new EventEmitter<string>();
   @Output() selectTeam = new EventEmitter<string | null>();
   @Output() createTeam = new EventEmitter<void>();
   @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
+  @Output() abilityChange = new EventEmitter<PokemonAbilitySelectionPayload>();
+  @Output() itemChange = new EventEmitter<PokemonItemSelectionPayload>();
   @Output() renameTeam = new EventEmitter<{ id: string; name: string }>();
 
   // UI state
