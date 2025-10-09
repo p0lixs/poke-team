@@ -25,6 +25,7 @@ export class TeamFacade {
   private readonly teamLoaded = signal(false);
   private readonly lastSynced = signal<Map<string, string>>(new Map());
   private readonly moveDetailsCache = new Map<string, PokemonMoveDetailVM>();
+  private readonly pendingAbilityRequests = new Set<number>();
   readonly itemOptions = signal<PokemonItemOptionVM[]>([]);
   private readonly newTeamDraft = signal<{ name: string; members: PokemonVM[] }>({
     name: 'New team',
@@ -191,6 +192,7 @@ export class TeamFacade {
       return next;
     });
     this.applyCachedMoveDetailsToPokemon(pokemon.id);
+    this.prefetchAbilityOptionsForPokemon(pokemon);
     this.prefetchMoveDetailsForPokemon(pokemon);
   }
 
@@ -420,6 +422,7 @@ export class TeamFacade {
     return (members ?? []).map((member) => {
       const normalized = this.mapper.normalizeVM(member);
       this.cacheMoveDetailsFromPokemon(normalized);
+      this.prefetchAbilityOptionsForPokemon(normalized);
       return normalized;
     });
   }
@@ -543,5 +546,65 @@ export class TeamFacade {
       !!detail.damageClass ||
       !!detail.effect
     );
+  }
+
+  private prefetchAbilityOptionsForPokemon(pokemon: PokemonVM) {
+    if (!pokemon || pokemon.abilityOptions.length) {
+      return;
+    }
+
+    if (this.pendingAbilityRequests.has(pokemon.id)) {
+      return;
+    }
+
+    this.pendingAbilityRequests.add(pokemon.id);
+
+    this.api
+      .getPokemonByName(String(pokemon.id))
+      .pipe(take(1))
+      .subscribe({
+        next: (dto: PokemonDTO) => {
+          const mapped = this.mapper.toVM(dto);
+          const abilityOptions = mapped.abilityOptions ?? [];
+          const fallbackAbility = mapped.selectedAbility ?? abilityOptions[0] ?? null;
+
+          if (!abilityOptions.length) {
+            return;
+          }
+
+          this.team.update((current) => {
+            const index = current.findIndex((member) => member.id === pokemon.id);
+            if (index === -1) {
+              return current;
+            }
+
+            const nextTeam = [...current];
+            const existing = this.mapper.normalizeVM(nextTeam[index]);
+            const selectedUrl = existing.selectedAbility?.url ?? null;
+
+            const selectedAbility = selectedUrl
+              ? abilityOptions.find((option) => option.url === selectedUrl) ??
+                this.mapper.abilityOptionFromUrl(selectedUrl)
+              : fallbackAbility;
+
+            const updated = this.mapper.normalizeVM({
+              ...existing,
+              abilityOptions,
+              selectedAbility,
+            });
+
+            nextTeam[index] = updated;
+            this.syncDraftMembers(nextTeam);
+            return nextTeam;
+          });
+        },
+        error: (error) => {
+          console.error('Error preloading ability options', error);
+          this.pendingAbilityRequests.delete(pokemon.id);
+        },
+        complete: () => {
+          this.pendingAbilityRequests.delete(pokemon.id);
+        },
+      });
   }
 }
