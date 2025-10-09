@@ -123,7 +123,13 @@
 
   @if (pokemon.stats.length) {
   <section class="stats">
-    <h4 class="stats__title">Statistics</h4>
+    <div class="stats__meta">
+      <h4 class="stats__title">Statistics</h4>
+      <div class="stats__summary">
+        <span class="stats__summary-total">EVs: {{ totalAllocatedEv }}/{{ statTotalEvMax }}</span>
+        <span class="stats__summary-remaining">Remaining: {{ remainingEv }}</span>
+      </div>
+    </div>
     <ul class="stats__list">
       @for (stat of pokemon.stats; track stat.name) {
       <li class="stats__item">
@@ -133,6 +139,20 @@
             [style.background]="getStatGradient(stat)"></div>
         </div>
         <span class="stats__value">{{ stat.value }}</span>
+        <div class="stats__controls">
+          <label class="stats__control">
+            <span>IV</span>
+            <input type="number" class="stats__control-input" [min]="statIvMin" [max]="statIvMax"
+              [ngModel]="stat.iv" (ngModelChange)="onStatIvChange(stat, $event)"
+              [ngModelOptions]="{ standalone: true }" inputmode="numeric" autocomplete="off" />
+          </label>
+          <label class="stats__control">
+            <span>EV</span>
+            <input type="number" class="stats__control-input" [min]="statEvMin" [max]="statEvMax"
+              [ngModel]="stat.ev" (ngModelChange)="onStatEvChange(stat, $event)"
+              [ngModelOptions]="{ standalone: true }" inputmode="numeric" autocomplete="off" />
+          </label>
+        </div>
       </li>
       }
     </ul>
