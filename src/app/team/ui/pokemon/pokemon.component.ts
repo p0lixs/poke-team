@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize, take } from 'rxjs/operators';
+import { forkJoin, of, Subscription, Observable } from 'rxjs';
+import { catchError, finalize, map, take, tap } from 'rxjs/operators';
 
 import { TypeIcon } from '../../../shared/ui/type-icon/type-icon';
 import { STAT_MAX_VALUES } from '../../../shared/util/constants';
@@ -42,6 +43,7 @@ export class PokemonComponent {
   private moveIconUrls: Record<string, string | null> = {};
   private moveDetailCache: Record<string, PokemonMoveDetailVM> = {};
   private pendingDetailRequests = new Set<string>();
+  private moveModalPreparationSub: Subscription | null = null;
 
   isMoveModalOpen = false;
   moveSearchTerm = '';
@@ -65,9 +67,11 @@ export class PokemonComponent {
     this.pendingSelection = this._pokemon.selectedMoves.map((move) => (move ? { ...move } : null));
     this.initializeMoveDetailCache();
     this.prepareMoveIcons();
-    if (this.isMoveModalOpen) {
-      this.initializeMoveTableRows();
-    }
+    this.ensureAllMoveDetailsLoaded().subscribe(() => {
+      if (this.isMoveModalOpen) {
+        this.initializeMoveTableRows();
+      }
+    });
   }
   get pokemon(): PokemonVM {
     return this._pokemon;
@@ -82,13 +86,29 @@ export class PokemonComponent {
   }
 
   openMoveModal() {
+    if (this.moveModalPreparationSub) {
+      this.moveModalPreparationSub.unsubscribe();
+      this.moveModalPreparationSub = null;
+    }
+
     this.pendingSelection = this.pokemon.selectedMoves.map((move) => (move ? { ...move } : null));
     this.moveSearchTerm = '';
-    this.isMoveModalOpen = true;
-    this.initializeMoveTableRows();
+    this.moveModalPreparationSub = this.ensureAllMoveDetailsLoaded().subscribe({
+      next: () => {
+        this.isMoveModalOpen = true;
+        this.initializeMoveTableRows();
+      },
+      complete: () => {
+        this.moveModalPreparationSub = null;
+      },
+    });
   }
 
   closeMoveModal() {
+    if (this.moveModalPreparationSub) {
+      this.moveModalPreparationSub.unsubscribe();
+      this.moveModalPreparationSub = null;
+    }
     this.isMoveModalOpen = false;
     this.moveTableRows = [];
     this.filteredMoveRows = [];
@@ -430,6 +450,66 @@ export class PokemonComponent {
     moveSources.forEach((move) => {
       this.ensureMoveIcon(move.type?.url ?? null, move.url);
     });
+  }
+
+  private ensureAllMoveDetailsLoaded(): Observable<void> {
+    const moves = this._pokemon?.moves ?? [];
+    const missingUrls = moves
+      .map((move) => move.url)
+      .filter((url): url is string => !!url)
+      .filter((url) => !this.hasMoveDetailInfo(this.moveDetailCache[url]))
+      .filter((url) => !this.pendingDetailRequests.has(url));
+
+    if (!missingUrls.length) {
+      return of(void 0);
+    }
+
+    missingUrls.forEach((url) => this.pendingDetailRequests.add(url));
+
+    return forkJoin(
+      missingUrls.map((url) =>
+        this.api
+          .getMoveByUrl(url)
+          .pipe(
+            take(1),
+            map((dto) => this.mapper.moveDetailFromDto(dto, url)),
+            tap((detail) => {
+              this.moveDetailCache[url] = detail;
+              this.updateMoveOptionWithDetail(detail);
+              this.ensureMoveIcon(detail.type?.url ?? null, detail.url);
+              if (this.isMoveModalOpen) {
+                this.applyDetailToRow(detail);
+              }
+            }),
+            catchError((error) => {
+              console.error('Error loading move details', error);
+              const placeholder = this.mapper.createMovePlaceholder(undefined, url);
+              this.moveDetailCache[url] = placeholder;
+              return of(placeholder);
+            })
+          )
+      )
+    ).pipe(
+      tap(() => this.prepareMoveIcons()),
+      finalize(() => {
+        missingUrls.forEach((url) => this.pendingDetailRequests.delete(url));
+      }),
+      map(() => void 0)
+    );
+  }
+
+  private hasMoveDetailInfo(detail: PokemonMoveDetailVM | null | undefined): boolean {
+    if (!detail) {
+      return false;
+    }
+
+    return (
+      !!detail.type ||
+      detail.power !== null ||
+      detail.accuracy !== null ||
+      !!detail.damageClass ||
+      !!detail.effect
+    );
   }
 
   private buildSearchIndex(
