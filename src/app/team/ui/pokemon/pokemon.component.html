@@ -19,16 +19,19 @@
   </header>
 
   <section class="loadout">
-    @if (pokemon.abilityOptions.length) {
     <label class="loadout__field">
       <span class="loadout__label">Ability</span>
-      <select class="loadout__select" [ngModel]="selectedAbilityUrl" (ngModelChange)="handleAbilityChange($event)">
+      <select class="loadout__select" [ngModel]="selectedAbilityUrl" (ngModelChange)="handleAbilityChange($event)"
+        [disabled]="!pokemon.abilityOptions.length">
+        @if (pokemon.abilityOptions.length) {
         @for (ability of pokemon.abilityOptions; track ability.url) {
         <option [value]="ability.url">{{ formatAbilityLabel(ability) }}</option>
         }
+        } @else {
+        <option value="" disabled>Loading abilities…</option>
+        }
       </select>
     </label>
-    }
 
     <label class="loadout__field">
       <span class="loadout__label">Held item</span>
