@@ -2,6 +2,8 @@ export interface PokemonStatVM {
   name: string;
   label: string;
   value: number;
+  iv: number;
+  ev: number;
 }
 
 export interface PokemonVM {
@@ -87,4 +89,11 @@ export interface PokemonNatureSelectionPayload {
 export interface PokemonLevelChangePayload {
   pokemonId: number;
   level: number;
+}
+
+export interface PokemonStatAllocationPayload {
+  pokemonId: number;
+  statName: string;
+  iv: number;
+  ev: number;
 }
