@@ -23,22 +23,22 @@ export class TypeIconService {
     return req$;
   }
 
-  /** Selecciona la mejor URL de icono dentro de `sprites` (estructura no documentada). */
+  /** Selects the best icon URL within `sprites` (undocumented structure). */
   private pickIconUrl(sprites: any): string | null {
     if (!sprites) return null;
 
-    // 1) Si existen claves que sugieran Gen 9 / SV, dales prioridad
+    // 1) If there are keys that suggest Gen 9 / SV, give them priority
     const preferKeys = ['generation-ix', 'scarlet-violet', 'sv', 'gen9', 'home'];
     for (const k of preferKeys) {
       const found = this.findFirstImageUrl(sprites[k]);
       if (found) return found;
     }
 
-    // 2) Fallback: recorre todo el objeto y devuelve el primer SVG/PNG que encuentre
+    // 2) Fallback: walk the entire object and return the first SVG/PNG that appears
     return this.findFirstImageUrl(sprites);
   }
 
-  /** Busca recursivamente la primera cadena que parezca URL de imagen. */
+  /** Recursively searches for the first string that looks like an image URL. */
   private findFirstImageUrl(node: any): string | null {
     if (!node) return null;
     if (typeof node === 'string' && /\.(svg|png|webp)(\?|$)/i.test(node)) return node;

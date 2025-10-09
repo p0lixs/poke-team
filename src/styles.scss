@@ -5,7 +5,7 @@
   --font-head: 'Rubik', 'Inter', system-ui, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
-  /* escala rápida (ajusta a tu gusto) */
+  /* quick scale (adjust to taste) */
   --fs-1: clamp(0.875rem, 0.8vw + 0.7rem, 1rem); /* body */
   --fs-2: clamp(1rem, 1vw + 0.8rem, 1.125rem); /* card title */
   --fs-3: clamp(1.125rem, 1.2vw + 0.9rem, 1.35rem); /* section title */
@@ -32,15 +32,15 @@ h3,
 .stat,
 .id {
   font-family: var(--font-mono);
-  font-feature-settings: 'tnum' 1, 'lnum' 1; /* números tabulares y alineados */
+  font-feature-settings: 'tnum' 1, 'lnum' 1; /* tabular and aligned numbers */
 }
 
-/* Ejemplos rápidos para tus componentes */
+/* Quick examples for your components */
 // .team-header h2 { font-size: var(--fs-3); }
 // .pokemon-card .name { font-size: var(--fs-2); text-transform: capitalize; }
 // .results .name { font-weight: 600; }
 
-/* Accesibilidad: asegura contraste en chips de tipo si usas color */
+/* Accessibility: ensure contrast on type chips if you use color */
 .type-icon img {
   filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.08));
 }

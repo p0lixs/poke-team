@@ -1,4 +1,4 @@
-/* Tarjeta flexible, 100% del ancho que le dé el contenedor flex */
+/* Flexible card, 100% of the width provided by the flex container */
 .pokemon-card {
   display: flex;
   flex-direction: column;
@@ -7,15 +7,15 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 0.75rem;
   background: #fff;
-  height: 100%; /* para igualar alturas entre columnas */
+  height: 100%; /* to equalize heights across columns */
 }
 
-/* Cabecera con imagen + título adaptables */
+/* Header with adaptable image and title */
 .head {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  min-width: 0; /* permite truncado de texto si hace falta */
+  min-width: 0; /* allows text truncation when needed */
 }
 
 .sprite {
@@ -45,7 +45,7 @@
 
 .types {
   display: flex;
-  flex-wrap: wrap; /* chips a varias líneas si hace falta */
+  flex-wrap: wrap; /* allow chips to wrap onto multiple lines */
   gap: 0.375rem;
   margin: 0;
   padding: 0;

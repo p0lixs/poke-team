@@ -1,35 +1,35 @@
 <div class="team-panel">
   <div class="team-header">
-    <h2>Tu equipo</h2>
-    <button class="btn-clear" type="button" (click)="clear.emit()" [disabled]="!team.length">Limpiar</button>
+    <h2>Your team</h2>
+    <button class="btn-clear" type="button" (click)="clear.emit()" [disabled]="!team.length">Clear</button>
   </div>
 
   <div class="team-controls">
-    <!-- Bloque Select/Input + Botonera -->
+    <!-- Select/Input block + button group -->
     <label class="control">
-      <span>Equipos</span>
+      <span>Teams</span>
       <div class="select-wrapper">
         @if (editMode === 'none') {
-        <!-- SELECT sin la opción 'Nuevo' -->
+        <!-- SELECT without the "New" option -->
         <select [ngModel]="selectedTeamId ?? ''" (ngModelChange)="onSelectChange($event)">
           @for (saved of savedTeams; track trackTeamId($index, saved)) {
           <option [value]="saved.id">{{ saved.name }}</option>
           }
         </select>
         } @else {
-        <!-- INPUT cuando se pulsa Añadir o Modificar -->
+        <!-- INPUT when Add or Edit is pressed -->
         <input type="text" [ngModel]="tempName" (ngModelChange)="tempName = $event"
-          placeholder="@{{ editMode === 'add' ? 'Nombre del nuevo equipo' : 'Nuevo nombre para el equipo' }}" />
+          placeholder="@{{ editMode === 'add' ? 'New team name' : 'New name for the team' }}" />
         }
         @if (editMode === 'none') {
         <div class="btn-group">
-          <button class="btn save" type="button" (click)="startAdd()">Añadir</button>
-          <button class="btn save" type="button" (click)="startEdit()" [disabled]="!selectedTeamId">Modificar</button>
+          <button class="btn save" type="button" (click)="startAdd()">Add</button>
+          <button class="btn save" type="button" (click)="startEdit()" [disabled]="!selectedTeamId">Edit</button>
         </div>
         } @else {
         <div class="btn-group">
-          <button class="btn save" type="button" (click)="confirm()" [disabled]="!tempName.trim()">Guardar</button>
-          <button class="btn cancel" type="button" (click)="cancelEdit()">Cancelar</button>
+          <button class="btn save" type="button" (click)="confirm()" [disabled]="!tempName.trim()">Save</button>
+          <button class="btn cancel" type="button" (click)="cancelEdit()">Cancel</button>
         </div>
         }
       </div>
@@ -45,6 +45,6 @@
     }
   </div>
   } @else {
-  <p class="muted">Aún no has añadido ningún Pokémon.</p>
+  <p class="muted">You have not added any Pokémon yet.</p>
   }
 </div>

@@ -4,11 +4,11 @@
       referrerpolicy="no-referrer" />
     <div class="title">
       <h3 class="name">{{ pokemon.name }}</h3>
-      <!-- pokemon.component.html (sustituye la parte de tipos) -->
+      <!-- pokemon.component.html (replace the type section) -->
       @if (pokemon['typeDetails'].length) {
       <app-type-icon [typeDetails]="pokemon.typeDetails" [size]="100"></app-type-icon>
       } @else if (pokemon.types.length) {
-      <!-- Fallback por si aún no tienes typeDetails -->
+      <!-- Fallback in case typeDetails are not available yet -->
       <ul class="types">
         @for (name of pokemon.types; track $index) {
         <li class="type-pill">{{ name }}</li>
@@ -20,7 +20,7 @@
 
   @if (pokemon.stats.length) {
   <section class="stats">
-    <h4 class="stats__title">Estadísticas</h4>
+    <h4 class="stats__title">Statistics</h4>
     <ul class="stats__list">
       @for (stat of pokemon.stats; track stat.name) {
       <li class="stats__item">
@@ -39,7 +39,7 @@
   @if (pokemon.moves.length) {
   <section class="moves">
     <div class="moves__header">
-      <h4 class="moves__title">Movimientos</h4>
+      <h4 class="moves__title">Moves</h4>
     </div>
     <ul class="moves__selected-list">
       @for (slot of moveSlots; track slot) {
@@ -52,7 +52,7 @@
           <span class="moves__selected-chip">
             <span class="moves__selected-name">{{ selected.name }}</span>
             @if (icon) {
-            <img class="moves__selected-icon" [src]="icon" [alt]="selected.type?.name ?? 'tipo'" />
+            <img class="moves__selected-icon" [src]="icon" [alt]="selected.type?.name ?? 'type'" />
             } @else {
             <span class="moves__selected-badge-label">
               {{ typeName ? typeName.slice(0, 3) : '—' }}
@@ -61,7 +61,7 @@
 
           </span>
           } @else {
-          <span class="moves__placeholder">Seleccionar movimiento {{ slot + 1 }}</span>
+          <span class="moves__placeholder">Select move {{ slot + 1 }}</span>
           }
         </button>
       </li>
@@ -72,7 +72,7 @@
 
   <footer class="actions">
     @if (showRemove) {
-    <button type="button" class="btn-remove" (click)="onRemove()">Quitar</button>
+    <button type="button" class="btn-remove" (click)="onRemove()">Remove</button>
     }
   </footer>
 </article>
@@ -80,21 +80,21 @@
 @if (isMoveModalOpen) {
 <div class="move-modal">
   <div class="move-modal__backdrop" (click)="closeMoveModal()"></div>
-  <div class="move-modal__dialog" role="dialog" aria-modal="true" aria-label="Selector de movimientos">
+  <div class="move-modal__dialog" role="dialog" aria-modal="true" aria-label="Move selector">
     <header class="move-modal__header">
-      <h3 class="move-modal__title">Selecciona los movimientos</h3>
-      <button type="button" class="move-modal__close" (click)="closeMoveModal()" aria-label="Cerrar">×</button>
+      <h3 class="move-modal__title">Choose moves</h3>
+      <button type="button" class="move-modal__close" (click)="closeMoveModal()" aria-label="Close">×</button>
     </header>
     <div class="move-modal__body">
       <label class="move-modal__search">
-        <span class="move-modal__search-label">Buscar</span>
+        <span class="move-modal__search-label">Search</span>
         <input type="search" class="move-modal__search-input" [(ngModel)]="moveSearchTerm"
-          (ngModelChange)="onSearchTermChange()" placeholder="Buscar movimiento" />
+          (ngModelChange)="onSearchTermChange()" placeholder="Search move" />
       </label>
 
       <div class="move-modal__selected">
         <div class="move-modal__selected-header">
-          <h4 class="move-modal__selected-title">Movimientos seleccionados</h4>
+          <h4 class="move-modal__selected-title">Selected moves</h4>
           <span class="move-modal__selected-count">{{ pendingSelectionCount }}/4</span>
         </div>
         <ul class="move-modal__selected-list">
@@ -105,7 +105,7 @@
             <button type="button" class="move-modal__selected-chip" (click)="removeSelectedMove(slot)">
               @let icon = getMoveIcon(move);
               @if (icon) {
-              <img class="move-modal__selected-icon" [src]="icon" [alt]="move.type?.name ?? 'tipo'" />
+              <img class="move-modal__selected-icon" [src]="icon" [alt]="move.type?.name ?? 'type'" />
               } @else if (move.type?.name) {
               <span class="move-modal__selected-type">{{ formatTypeName(move.type?.name ?? '') }}</span>
               }
@@ -113,7 +113,7 @@
               <span class="move-modal__selected-remove" aria-hidden="true">×</span>
             </button>
             } @else {
-            <span class="move-modal__selected-placeholder">Hueco libre</span>
+            <span class="move-modal__selected-placeholder">Empty slot</span>
             }
           </li>
           }
@@ -124,41 +124,41 @@
         <table class="move-modal__table">
           <thead>
             <tr>
-              <th scope="col">Movimiento</th>
-              <th scope="col">Tipo</th>
-              <th scope="col">Poder</th>
-              <th scope="col">Precisión</th>
-              <th scope="col">Categoría</th>
-              <th scope="col" class="move-modal__effect-column">Efecto</th>
+              <th scope="col">Move</th>
+              <th scope="col">Type</th>
+              <th scope="col">Power</th>
+              <th scope="col">Accuracy</th>
+              <th scope="col">Category</th>
+              <th scope="col" class="move-modal__effect-column">Effect</th>
             </tr>
           </thead>
           <tbody>
             @if (!filteredMoveRows.length) {
             <tr class="move-modal__empty">
-              <td colspan="6">No hay movimientos que coincidan con la búsqueda.</td>
+              <td colspan="6">No moves match the search.</td>
             </tr>
             } @else {
             @for (row of filteredMoveRows; track row.url) {
             <tr class="move-modal__row" (click)="toggleMoveSelection(row)" [class.is-selected]="isMoveSelected(row.url)"
               [class.is-disabled]="pendingSelectionCount >= moveSlots.length && !isMoveSelected(row.url)">
-              <td data-label="Movimiento">{{ row.label }}</td>
-              <td data-label="Tipo">
+              <td data-label="Move">{{ row.label }}</td>
+              <td data-label="Type">
                 @if (row.typeIcon) {
-                <img class="move-modal__type-icon" [src]="row.typeIcon" [alt]="row.type?.name ?? 'tipo'" />
+                <img class="move-modal__type-icon" [src]="row.typeIcon" [alt]="row.type?.name ?? 'type'" />
                 } @else if (row.type?.name) {
                 <span class="move-modal__type-pill">{{ formatTypeName(row.type?.name ?? '') }}</span>
                 } @else {
                 <span class="move-modal__type-pill">—</span>
                 }
               </td>
-              <td data-label="Poder">{{ row.power !== null ? row.power : '—' }}</td>
-              <td data-label="Precisión">{{ row.accuracy !== null ? row.accuracy + '%' : '—' }}</td>
-              <td data-label="Categoría">{{ formatCategory(row.damageClass) }}</td>
-              <td data-label="Efecto" class="move-modal__effect-cell">
+              <td data-label="Power">{{ row.power !== null ? row.power : '—' }}</td>
+              <td data-label="Accuracy">{{ row.accuracy !== null ? row.accuracy + '%' : '—' }}</td>
+              <td data-label="Category">{{ formatCategory(row.damageClass) }}</td>
+              <td data-label="Effect" class="move-modal__effect-cell">
                 @if (row.effect) {
                 <span class="move-modal__effect" [title]="row.effect">{{ row.effect }}</span>
                 } @else if (row.loading) {
-                <span class="move-modal__effect move-modal__effect--loading">Cargando…</span>
+                <span class="move-modal__effect move-modal__effect--loading">Loading…</span>
                 } @else {
                 <span class="move-modal__effect">—</span>
                 }
@@ -171,8 +171,8 @@
       </div>
     </div>
     <footer class="move-modal__footer">
-      <button type="button" class="move-modal__cancel" (click)="closeMoveModal()">Cancelar</button>
-      <button type="button" class="move-modal__save" (click)="saveMoveSelection()">Guardar</button>
+      <button type="button" class="move-modal__cancel" (click)="closeMoveModal()">Cancel</button>
+      <button type="button" class="move-modal__save" (click)="saveMoveSelection()">Save</button>
     </footer>
   </div>
 </div>
