@@ -13,7 +13,14 @@ import { forkJoin, of, Subscription, Observable } from 'rxjs';
 import { catchError, finalize, map, take, tap } from 'rxjs/operators';
 
 import { TypeIcon } from '../../../shared/ui/type-icon/type-icon';
-import { STAT_MAX_VALUES } from '../../../shared/util/constants';
+import {
+  STAT_EV_MAX,
+  STAT_EV_MIN,
+  STAT_IV_MAX,
+  STAT_IV_MIN,
+  STAT_MAX_VALUES,
+  STAT_TOTAL_EV_MAX,
+} from '../../../shared/util/constants';
 import { PokemonApi } from '../../data/pokemon.api';
 import { PokemonMapper } from '../../data/pokemon.mapper';
 import { TypeIconService } from '../../data/type-icon.service';
@@ -29,6 +36,7 @@ import {
   PokemonNatureOptionVM,
   PokemonNatureSelectionPayload,
   PokemonLevelChangePayload,
+  PokemonStatAllocationPayload,
   PokemonVM,
 } from '../../models/view.model';
 
@@ -73,6 +81,12 @@ export class PokemonComponent {
   isItemDropdownOpen = false;
   filteredItems: PokemonItemOptionVM[] = [];
 
+  readonly statIvMin = STAT_IV_MIN;
+  readonly statIvMax = STAT_IV_MAX;
+  readonly statEvMin = STAT_EV_MIN;
+  readonly statEvMax = STAT_EV_MAX;
+  readonly statTotalEvMax = STAT_TOTAL_EV_MAX;
+
   private _items: PokemonItemOptionVM[] = [];
   private _natures: PokemonNatureOptionVM[] = [];
 
@@ -85,7 +99,7 @@ export class PokemonComponent {
     const level = this.clampLevel(value.level ?? 50);
     this._pokemon = {
       ...value,
-      stats: value.stats ?? [],
+      stats: Array.isArray(value.stats) ? value.stats.map((stat) => ({ ...stat })) : [],
       moves: value.moves ?? [],
       selectedMoves: Array.isArray(value.selectedMoves)
         ? value.selectedMoves
@@ -130,6 +144,7 @@ export class PokemonComponent {
   @Output() itemChange = new EventEmitter<PokemonItemSelectionPayload>();
   @Output() natureChange = new EventEmitter<PokemonNatureSelectionPayload>();
   @Output() levelChange = new EventEmitter<PokemonLevelChangePayload>();
+  @Output() statChange = new EventEmitter<PokemonStatAllocationPayload>();
 
   onRemove() {
     this.remove.emit(this.pokemon.id);
@@ -397,6 +412,38 @@ export class PokemonComponent {
     const endColor = `hsl(${hue}, 85%, 45%)`;
 
     return `linear-gradient(90deg, ${startColor} 0%, ${endColor} 100%)`;
+  }
+
+  get totalAllocatedEv(): number {
+    return (this.pokemon.stats ?? []).reduce((sum, stat) => sum + (stat.ev ?? 0), 0);
+  }
+
+  get remainingEv(): number {
+    return Math.max(0, this.statTotalEvMax - this.totalAllocatedEv);
+  }
+
+  onStatIvChange(stat: PokemonStatVM, rawValue: number | string) {
+    const iv = this.clampInteger(rawValue, this.statIvMin, this.statIvMax);
+    if (stat.iv !== iv) {
+      stat.iv = iv;
+    }
+
+    this.emitStatChange(stat);
+  }
+
+  onStatEvChange(stat: PokemonStatVM, rawValue: number | string) {
+    const desired = this.clampInteger(rawValue, this.statEvMin, this.statEvMax);
+    const otherAllocated = this.pokemon.stats
+      .filter((current) => current !== stat)
+      .reduce((sum, current) => sum + (current.ev ?? 0), 0);
+    const available = Math.max(0, this.statTotalEvMax - otherAllocated);
+    const ev = Math.min(desired, available);
+
+    if (stat.ev !== ev) {
+      stat.ev = ev;
+    }
+
+    this.emitStatChange(stat);
   }
 
   private initializeMoveDetailCache() {
@@ -712,6 +759,25 @@ export class PokemonComponent {
     }
 
     return Math.min(100, Math.max(1, Math.round(level)));
+  }
+
+  private clampInteger(value: unknown, min: number, max: number): number {
+    const numeric = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numeric)) {
+      return min;
+    }
+
+    const rounded = Math.floor(numeric);
+    return Math.min(max, Math.max(min, rounded));
+  }
+
+  private emitStatChange(stat: PokemonStatVM) {
+    this.statChange.emit({
+      pokemonId: this.pokemon.id,
+      statName: stat.name,
+      iv: stat.iv,
+      ev: stat.ev,
+    });
   }
 
   private formatStatName(stat: string): string {

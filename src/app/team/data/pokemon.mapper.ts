@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core';
-import { STAT_LABELS } from '../../shared/util/constants';
+import {
+  STAT_EV_MAX,
+  STAT_EV_MIN,
+  STAT_IV_MAX,
+  STAT_IV_MIN,
+  STAT_LABELS,
+  STAT_TOTAL_EV_MAX,
+} from '../../shared/util/constants';
 import { MoveDTO, NatureDTO, PokemonAbilityDTO, PokemonDTO, NamedAPIResource } from '../models/pokeapi.dto';
 import {
   PokemonAbilityOptionVM,
@@ -7,6 +14,7 @@ import {
   PokemonMoveDetailVM,
   PokemonMoveOptionVM,
   PokemonNatureOptionVM,
+  PokemonStatVM,
   PokemonVM,
 } from '../models/view.model';
 
@@ -29,12 +37,15 @@ export class PokemonMapper {
       typeDetails: dto.types
         .sort((a, b) => a.slot - b.slot)
         .map((t) => ({ name: t.type.name, url: t.type.url })),
-      stats:
+      stats: this.normalizeStats(
         dto.stats?.map((stat) => ({
           name: stat.stat.name,
           label: STAT_LABELS[stat.stat.name] ?? this.toTitleCase(stat.stat.name.replace(/-/g, ' ')),
           value: stat.base_stat,
-        })) ?? [],
+          iv: STAT_IV_MIN,
+          ev: STAT_EV_MIN,
+        })) ?? []
+      ),
       level: 50,
       abilityOptions,
       selectedAbility: defaultAbility,
@@ -72,16 +83,7 @@ export class PokemonMapper {
       typeDetails: Array.isArray(value.typeDetails)
         ? value.typeDetails.map((type) => ({ name: type.name, url: type.url }))
         : [],
-      stats: Array.isArray(value.stats)
-        ? value.stats.map((stat) => ({
-            name: stat.name,
-            label:
-              stat.label ??
-              STAT_LABELS[stat.name] ??
-              this.toTitleCase(stat.name.replace(/-/g, ' ')),
-            value: stat.value ?? 0,
-          }))
-        : [],
+      stats: this.normalizeStats(value.stats),
       level,
       abilityOptions,
       selectedAbility,
@@ -290,6 +292,64 @@ export class PokemonMapper {
     }
 
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${normalized}.png`;
+  }
+
+  private normalizeStats(stats: PokemonStatVM[] | undefined | null): PokemonStatVM[] {
+    const normalizedStats: PokemonStatVM[] = Array.isArray(stats)
+      ? stats.map((stat) => {
+          const name = (stat?.name ?? '').toString();
+          const label = stat?.label ?? STAT_LABELS[name] ?? this.toTitleCase(name.replace(/-/g, ' '));
+          const value = this.clampBaseStat(stat?.value);
+          const iv = this.clampInteger(stat?.iv, STAT_IV_MIN, STAT_IV_MAX);
+          const ev = this.clampInteger(stat?.ev, STAT_EV_MIN, STAT_EV_MAX);
+
+          return {
+            name,
+            label,
+            value,
+            iv,
+            ev,
+          } satisfies PokemonStatVM;
+        })
+      : [];
+
+    let totalEv = normalizedStats.reduce((sum, stat) => sum + stat.ev, 0);
+    if (totalEv <= STAT_TOTAL_EV_MAX) {
+      return normalizedStats;
+    }
+
+    let overflow = totalEv - STAT_TOTAL_EV_MAX;
+    for (let index = normalizedStats.length - 1; index >= 0 && overflow > 0; index -= 1) {
+      const stat = normalizedStats[index];
+      const reduction = Math.min(stat.ev, overflow);
+      stat.ev -= reduction;
+      overflow -= reduction;
+    }
+
+    if (overflow > 0 && normalizedStats.length) {
+      normalizedStats[0].ev = Math.max(STAT_EV_MIN, normalizedStats[0].ev - overflow);
+    }
+
+    return normalizedStats;
+  }
+
+  private clampInteger(value: unknown, min: number, max: number): number {
+    const numeric = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numeric)) {
+      return min;
+    }
+
+    const rounded = Math.floor(numeric);
+    return Math.min(max, Math.max(min, rounded));
+  }
+
+  private clampBaseStat(value: unknown): number {
+    const numeric = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numeric)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.round(numeric));
   }
 
   private normalizeLevel(level: number | null | undefined): number {

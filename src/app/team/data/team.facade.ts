@@ -10,6 +10,8 @@ import {
   PokemonNatureOptionVM,
   PokemonNatureSelectionPayload,
   PokemonLevelChangePayload,
+  PokemonStatAllocationPayload,
+  PokemonStatVM,
   PokemonVM,
 } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -506,6 +508,31 @@ export class TeamFacade {
     });
   }
 
+  changePokemonStats(change: PokemonStatAllocationPayload) {
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === change.pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.mapper.normalizeVM(nextTeam[index]);
+      const stats = pokemon.stats.map((stat) =>
+        stat.name === change.statName ? { ...stat, iv: change.iv, ev: change.ev } : { ...stat }
+      );
+
+      const updated = this.applyNatureToPokemon(this.mapper.normalizeVM({ ...pokemon, stats }));
+
+      if (this.areStatsEqual(updated.stats, pokemon.stats)) {
+        return current;
+      }
+
+      nextTeam[index] = updated;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
+  }
+
   changePokemonNature(change: PokemonNatureSelectionPayload) {
     const options = this.natureOptions();
     this.team.update((current) => {
@@ -581,6 +608,29 @@ export class TeamFacade {
       this.cacheMoveDetailsFromPokemon(result);
       this.prefetchAbilityOptionsForPokemon(result);
       return result;
+    });
+  }
+
+  private areStatsEqual(a: PokemonStatVM[], b: PokemonStatVM[]): boolean {
+    if (a.length !== b.length) {
+      return false;
+    }
+
+    const lookup = new Map<string, PokemonStatVM>();
+    b.forEach((stat) => lookup.set(stat.name, stat));
+
+    return a.every((stat) => {
+      const other = lookup.get(stat.name);
+      if (!other) {
+        return false;
+      }
+
+      return (
+        stat.value === other.value &&
+        stat.iv === other.iv &&
+        stat.ev === other.ev &&
+        stat.label === other.label
+      );
     });
   }
 
