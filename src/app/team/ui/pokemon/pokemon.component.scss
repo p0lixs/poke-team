@@ -36,7 +36,11 @@
 .loadout {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: 70px 1fr;
+  grid-template-areas:
+    "level ability"
+    "nature nature"
+    "item item";
 
   &__field {
     display: flex;
@@ -74,7 +78,10 @@
     }
   }
 }
-
+.loadout__field:nth-child(1) { grid-area: level; }
+.loadout__field:nth-child(2) { grid-area: nature; }
+.loadout__field:nth-child(3) { grid-area: ability; }
+.loadout__field:nth-child(4) { grid-area: item; }
 .item-dropdown {
   position: relative;
 
@@ -300,7 +307,7 @@
   }
 
   &__label {
-    flex: 0 0 120px;
+    flex: 0 0 55px;
     text-transform: capitalize;
   }
 
