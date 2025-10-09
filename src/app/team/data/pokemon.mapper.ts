@@ -147,7 +147,7 @@ export class PokemonMapper {
       name: resource.name,
       label: this.formatItemName(resource.name),
       url: resource.url,
-      sprite: null,
+      sprite: this.buildItemSpriteUrl(resource.name),
     });
   }
 
@@ -157,7 +157,7 @@ export class PokemonMapper {
       name,
       label: this.formatItemName(name),
       url,
-      sprite: null,
+      sprite: this.buildItemSpriteUrl(name),
     });
   }
 
@@ -246,8 +246,22 @@ export class PokemonMapper {
       name: baseName,
       label: label || this.formatItemName(baseName),
       url,
-      sprite: option.sprite ?? null,
+      sprite: option.sprite ?? this.buildItemSpriteUrl(baseName),
     };
+  }
+
+  private buildItemSpriteUrl(name: string | undefined | null): string | null {
+    const normalized = (name ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\-]/g, '');
+
+    if (!normalized) {
+      return null;
+    }
+
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${normalized}.png`;
   }
 
   private toTitleCase(value: string): string {

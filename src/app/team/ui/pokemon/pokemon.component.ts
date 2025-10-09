@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  Output,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, of, Subscription, Observable } from 'rxjs';
 import { catchError, finalize, map, take, tap } from 'rxjs/operators';
@@ -56,10 +64,12 @@ export class PokemonComponent {
   pendingSelection: (PokemonMoveDetailVM | null)[] = [null, null, null, null];
   selectedAbilityUrl = '';
   selectedItemUrl = '';
+  isItemDropdownOpen = false;
 
   private readonly typeIcons = inject(TypeIconService);
   private readonly api = inject(PokemonApi);
   private readonly mapper = inject(PokemonMapper);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @Input() set pokemon(value: PokemonVM) {
     this._pokemon = {
@@ -192,7 +202,7 @@ export class PokemonComponent {
     });
   }
 
-  handleItemChange(url: string) {
+  handleItemChange(url: string | null) {
     const normalized = url?.trim() ?? '';
     if (normalized === '__loading') {
       return;
@@ -202,6 +212,53 @@ export class PokemonComponent {
       pokemonId: this.pokemon.id,
       itemUrl: normalized || null,
     });
+  }
+
+  get selectedItem(): PokemonItemOptionVM | null {
+    const url = this.selectedItemUrl;
+    if (!url) {
+      return null;
+    }
+
+    return this.items.find((item) => item.url === url) ?? null;
+  }
+
+  toggleItemDropdown(event?: MouseEvent) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.isItemDropdownOpen = !this.isItemDropdownOpen;
+  }
+
+  selectItem(url: string | null, event?: MouseEvent) {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    this.isItemDropdownOpen = false;
+    this.handleItemChange(url);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    if (!this.isItemDropdownOpen) {
+      return;
+    }
+
+    const target = event.target as Node | null;
+    if (!target) {
+      this.isItemDropdownOpen = false;
+      return;
+    }
+
+    if (!this.host.nativeElement.contains(target)) {
+      this.isItemDropdownOpen = false;
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.isItemDropdownOpen) {
+      this.isItemDropdownOpen = false;
+    }
   }
 
   get pendingSelectionCount(): number {

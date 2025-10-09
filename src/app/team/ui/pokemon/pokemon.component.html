@@ -35,16 +35,57 @@
 
     <label class="loadout__field">
       <span class="loadout__label">Held item</span>
-      <select class="loadout__select" [ngModel]="selectedItemUrl" (ngModelChange)="handleItemChange($event)">
-        <option value="">None</option>
-        @if (items.length) {
-        @for (item of items; track item.url) {
-        <option [value]="item.url">{{ item.label }}</option>
+      <div class="item-dropdown" [class.is-open]="isItemDropdownOpen">
+        <button type="button" class="item-dropdown__trigger" (click)="toggleItemDropdown($event)"
+          aria-haspopup="listbox" [attr.aria-expanded]="isItemDropdownOpen">
+          @if (selectedItem) {
+          <span class="item-dropdown__option">
+            @if (selectedItem.sprite) {
+            <img class="item-dropdown__icon" [src]="selectedItem.sprite" [alt]="selectedItem.label"
+              referrerpolicy="no-referrer" loading="lazy" />
+            } @else {
+            <span class="item-dropdown__icon item-dropdown__icon--placeholder" aria-hidden="true">?</span>
+            }
+            <span class="item-dropdown__label">{{ selectedItem.label }}</span>
+          </span>
+          } @else {
+          <span class="item-dropdown__placeholder">None</span>
+          }
+        </button>
+
+        @if (isItemDropdownOpen) {
+        <div class="item-dropdown__menu" role="listbox">
+          <button type="button" class="item-dropdown__menu-item" [class.is-active]="!selectedItemUrl"
+            (click)="selectItem(null, $event)" role="option" [attr.aria-selected]="!selectedItemUrl">
+            <span class="item-dropdown__option">
+              <span class="item-dropdown__label">None</span>
+            </span>
+          </button>
+
+          @if (items.length) {
+          <div class="item-dropdown__list">
+            @for (item of items; track item.url) {
+            <button type="button" class="item-dropdown__menu-item" (click)="selectItem(item.url, $event)"
+              [class.is-active]="item.url === selectedItemUrl" role="option"
+              [attr.aria-selected]="item.url === selectedItemUrl">
+              <span class="item-dropdown__option">
+              @if (item.sprite) {
+              <img class="item-dropdown__icon" [src]="item.sprite" [alt]="item.label" referrerpolicy="no-referrer"
+                loading="lazy" />
+                } @else {
+                <span class="item-dropdown__icon item-dropdown__icon--placeholder" aria-hidden="true">?</span>
+              }
+              <span class="item-dropdown__label">{{ item.label }}</span>
+            </span>
+            </button>
+            }
+          </div>
+          } @else {
+          <div class="item-dropdown__empty">Loading items…</div>
+          }
+        </div>
         }
-        } @else {
-        <option value="__loading" disabled>Loading items…</option>
-        }
-      </select>
+      </div>
     </label>
   </section>
 
