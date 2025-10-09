@@ -5,6 +5,9 @@ import {
   PokemonItemOptionVM,
   PokemonItemSelectionPayload,
   PokemonMoveSelectionPayload,
+  PokemonNatureOptionVM,
+  PokemonNatureSelectionPayload,
+  PokemonLevelChangePayload,
   PokemonVM,
 } from '../../models/view.model';
 import { SavedTeam } from '../../models/team.model';
@@ -24,6 +27,7 @@ export class TeamPanelComponent {
   @Input({ required: true }) savedTeams: SavedTeam[] = [];
   @Input({ required: true }) selectedTeamId: string | null = null;
   @Input({ required: true }) items: PokemonItemOptionVM[] = [];
+  @Input({ required: true }) natures: PokemonNatureOptionVM[] = [];
   @Output() remove = new EventEmitter<number>();
   @Output() clear = new EventEmitter<void>();
   @Output() teamNameChange = new EventEmitter<string>();
@@ -32,6 +36,8 @@ export class TeamPanelComponent {
   @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
   @Output() abilityChange = new EventEmitter<PokemonAbilitySelectionPayload>();
   @Output() itemChange = new EventEmitter<PokemonItemSelectionPayload>();
+  @Output() natureChange = new EventEmitter<PokemonNatureSelectionPayload>();
+  @Output() levelChange = new EventEmitter<PokemonLevelChangePayload>();
   @Output() renameTeam = new EventEmitter<{ id: string; name: string }>();
 
   // UI state

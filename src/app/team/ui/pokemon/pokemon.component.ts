@@ -26,6 +26,9 @@ import {
   PokemonMoveOptionVM,
   PokemonMoveSelectionPayload,
   PokemonStatVM,
+  PokemonNatureOptionVM,
+  PokemonNatureSelectionPayload,
+  PokemonLevelChangePayload,
   PokemonVM,
 } from '../../models/view.model';
 
@@ -65,10 +68,13 @@ export class PokemonComponent {
   pendingSelection: (PokemonMoveDetailVM | null)[] = [null, null, null, null];
   selectedAbilityUrl = '';
   selectedItemUrl = '';
+  selectedNatureUrl = '';
+  levelValue = 50;
   isItemDropdownOpen = false;
   filteredItems: PokemonItemOptionVM[] = [];
 
   private _items: PokemonItemOptionVM[] = [];
+  private _natures: PokemonNatureOptionVM[] = [];
 
   private readonly typeIcons = inject(TypeIconService);
   private readonly api = inject(PokemonApi);
@@ -76,6 +82,7 @@ export class PokemonComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   @Input() set pokemon(value: PokemonVM) {
+    const level = this.clampLevel(value.level ?? 50);
     this._pokemon = {
       ...value,
       stats: value.stats ?? [],
@@ -83,10 +90,14 @@ export class PokemonComponent {
       selectedMoves: Array.isArray(value.selectedMoves)
         ? value.selectedMoves
         : [null, null, null, null],
+      level,
+      selectedNature: value.selectedNature ? { ...value.selectedNature } : null,
     };
     this.pendingSelection = this._pokemon.selectedMoves.map((move) => (move ? { ...move } : null));
     this.selectedAbilityUrl = this._pokemon.selectedAbility?.url ?? '';
     this.selectedItemUrl = this._pokemon.heldItem?.url ?? '';
+    this.levelValue = level;
+    this.selectedNatureUrl = this._pokemon.selectedNature?.url ?? '';
     this.initializeMoveDetailCache();
     this.prepareMoveIcons();
     this.ensureAllMoveDetailsLoaded().subscribe(() => {
@@ -107,10 +118,18 @@ export class PokemonComponent {
   get items(): PokemonItemOptionVM[] {
     return this._items;
   }
+  @Input() set natures(value: PokemonNatureOptionVM[]) {
+    this._natures = Array.isArray(value) ? value : [];
+  }
+  get natures(): PokemonNatureOptionVM[] {
+    return this._natures;
+  }
   @Output() remove = new EventEmitter<number>();
   @Output() moveChange = new EventEmitter<PokemonMoveSelectionPayload>();
   @Output() abilityChange = new EventEmitter<PokemonAbilitySelectionPayload>();
   @Output() itemChange = new EventEmitter<PokemonItemSelectionPayload>();
+  @Output() natureChange = new EventEmitter<PokemonNatureSelectionPayload>();
+  @Output() levelChange = new EventEmitter<PokemonLevelChangePayload>();
 
   onRemove() {
     this.remove.emit(this.pokemon.id);
@@ -224,6 +243,32 @@ export class PokemonComponent {
     });
   }
 
+  handleNatureChange(url: string) {
+    const normalized = url?.trim() ?? '';
+    this.selectedNatureUrl = normalized;
+    this.natureChange.emit({
+      pokemonId: this.pokemon.id,
+      natureUrl: normalized || null,
+    });
+  }
+
+  handleLevelChange(value: string | number) {
+    const numeric = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numeric)) {
+      this.levelValue = this.pokemon.level;
+      return;
+    }
+
+    const clamped = this.clampLevel(numeric);
+    this.levelValue = clamped;
+    if (clamped !== this.pokemon.level) {
+      this.levelChange.emit({
+        pokemonId: this.pokemon.id,
+        level: clamped,
+      });
+    }
+  }
+
   get selectedItem(): PokemonItemOptionVM | null {
     const url = this.selectedItemUrl;
     if (!url) {
@@ -312,6 +357,26 @@ export class PokemonComponent {
   formatAbilityLabel(option: PokemonAbilityOptionVM): string {
     const base = option.label;
     return option.isHidden ? `${base} (Hidden)` : base;
+  }
+
+  formatNatureLabel(option: PokemonNatureOptionVM): string {
+    const base = option.label;
+    const increased = option.increasedStat ? this.formatStatName(option.increasedStat) : null;
+    const decreased = option.decreasedStat ? this.formatStatName(option.decreasedStat) : null;
+
+    if (increased && decreased) {
+      return `${base} (+${increased} / -${decreased})`;
+    }
+
+    if (increased) {
+      return `${base} (+${increased})`;
+    }
+
+    if (decreased) {
+      return `${base} (-${decreased})`;
+    }
+
+    return `${base} (Neutral)`;
   }
 
   getStatPercentage(stat: PokemonStatVM): number {
@@ -639,6 +704,18 @@ export class PokemonComponent {
       !!detail.damageClass ||
       !!detail.effect
     );
+  }
+
+  private clampLevel(level: number): number {
+    if (!Number.isFinite(level)) {
+      return 50;
+    }
+
+    return Math.min(100, Math.max(1, Math.round(level)));
+  }
+
+  private formatStatName(stat: string): string {
+    return this.toTitleCase(stat.replace(/-/g, ' '));
   }
 
   private buildSearchIndex(

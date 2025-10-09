@@ -11,11 +11,21 @@ export interface PokemonVM {
   types: string[];
   typeDetails: { name: string; url: string }[];
   stats: PokemonStatVM[];
+  level: number;
   abilityOptions: PokemonAbilityOptionVM[];
   selectedAbility: PokemonAbilityOptionVM | null;
   heldItem: PokemonItemOptionVM | null;
+  selectedNature: PokemonNatureOptionVM | null;
   moves: PokemonMoveOptionVM[];
   selectedMoves: (PokemonMoveDetailVM | null)[];
+}
+
+export interface PokemonNatureOptionVM {
+  name: string;
+  label: string;
+  url: string;
+  increasedStat: string | null;
+  decreasedStat: string | null;
 }
 
 export interface PokemonAbilityOptionVM {
@@ -67,4 +77,14 @@ export interface PokemonAbilitySelectionPayload {
 export interface PokemonItemSelectionPayload {
   pokemonId: number;
   itemUrl: string | null;
+}
+
+export interface PokemonNatureSelectionPayload {
+  pokemonId: number;
+  natureUrl: string | null;
+}
+
+export interface PokemonLevelChangePayload {
+  pokemonId: number;
+  level: number;
 }

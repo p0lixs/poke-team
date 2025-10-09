@@ -7,6 +7,9 @@ import {
   PokemonItemSelectionPayload,
   PokemonMoveDetailVM,
   PokemonMoveSelectionPayload,
+  PokemonNatureOptionVM,
+  PokemonNatureSelectionPayload,
+  PokemonLevelChangePayload,
   PokemonVM,
 } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -27,6 +30,7 @@ export class TeamFacade {
   private readonly moveDetailsCache = new Map<string, PokemonMoveDetailVM>();
   private readonly pendingAbilityRequests = new Set<number>();
   readonly itemOptions = signal<PokemonItemOptionVM[]>([]);
+  readonly natureOptions = signal<PokemonNatureOptionVM[]>([]);
   private readonly newTeamDraft = signal<{ name: string; members: PokemonVM[] }>({
     name: 'New team',
     members: [],
@@ -79,6 +83,23 @@ export class TeamFacade {
         },
         error: (error) => {
           console.error('Unable to load items from the API', error);
+        },
+      });
+
+    this.api
+      .getAllNatures()
+      .pipe(take(1))
+      .subscribe({
+        next: (natures) => {
+          const options = (natures ?? [])
+            .map((nature) => this.mapper.natureOptionFromDto(nature))
+            .filter((option): option is PokemonNatureOptionVM => !!option)
+            .sort((a, b) => a.label.localeCompare(b.label));
+          this.natureOptions.set(options);
+          this.refreshNatureAssignments();
+        },
+        error: (error) => {
+          console.error('Unable to load natures from the API', error);
         },
       });
 
@@ -184,7 +205,7 @@ export class TeamFacade {
     if (!this.canAdd()) return;
     const exists = this.team().some((x) => x.id === p.id);
     if (exists) return; // avoid duplicates
-    const pokemon = this.mapper.normalizeVM(p);
+    const pokemon = this.applyNatureToPokemon(this.mapper.normalizeVM(p));
     this.cacheMoveDetailsFromPokemon(pokemon);
     this.team.update((arr) => {
       const next = [...arr, pokemon];
@@ -289,6 +310,89 @@ export class TeamFacade {
     return JSON.stringify({ name, members });
   }
 
+  private clampLevel(level: number | null | undefined): number {
+    const numeric = typeof level === 'number' ? level : Number(level);
+    if (!Number.isFinite(numeric)) {
+      return 50;
+    }
+
+    return Math.min(100, Math.max(1, Math.round(numeric)));
+  }
+
+  private refreshNatureAssignments() {
+    const options = this.natureOptions();
+    if (!options.length) {
+      return;
+    }
+
+    this.team.update((current) => this.normalizeTeamMembers(current));
+    this.newTeamDraft.update((draft) => ({
+      ...draft,
+      members: this.normalizeTeamMembers(draft.members),
+    }));
+    this.savedTeams.update((teams) =>
+      teams.map((team) => ({
+        ...team,
+        members: this.normalizeTeamMembers(team.members),
+      }))
+    );
+  }
+
+  private applyNatureToPokemon(pokemon: PokemonVM): PokemonVM {
+    const selectedNature = this.selectNatureOption(pokemon.selectedNature, this.natureOptions());
+    if (selectedNature === pokemon.selectedNature) {
+      return pokemon;
+    }
+
+    return { ...pokemon, selectedNature };
+  }
+
+  private selectNatureOption(
+    current: PokemonNatureOptionVM | null | undefined,
+    options: PokemonNatureOptionVM[]
+  ): PokemonNatureOptionVM | null {
+    const url = current?.url?.trim();
+    if (!url) {
+      return null;
+    }
+
+    const match = options.find((option) => option.url === url);
+    if (match) {
+      return match;
+    }
+
+    if (current) {
+      return {
+        name: current.name,
+        label: current.label,
+        url,
+        increasedStat: current.increasedStat ?? null,
+        decreasedStat: current.decreasedStat ?? null,
+      };
+    }
+
+    return this.mapper.natureOptionFromUrl(url);
+  }
+
+  private areNaturesEqual(
+    a: PokemonNatureOptionVM | null,
+    b: PokemonNatureOptionVM | null
+  ): boolean {
+    if (!a && !b) {
+      return true;
+    }
+
+    if (!a || !b) {
+      return false;
+    }
+
+    return (
+      a.url === b.url &&
+      (a.increasedStat ?? null) === (b.increasedStat ?? null) &&
+      (a.decreasedStat ?? null) === (b.decreasedStat ?? null)
+    );
+  }
+
   changePokemonAbility(change: PokemonAbilitySelectionPayload) {
     this.team.update((current) => {
       const index = current.findIndex((pokemon) => pokemon.id === change.pokemonId);
@@ -381,6 +485,56 @@ export class TeamFacade {
       });
   }
 
+  changePokemonLevel(change: PokemonLevelChangePayload) {
+    const level = this.clampLevel(change.level);
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === change.pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.applyNatureToPokemon(this.mapper.normalizeVM(nextTeam[index]));
+      if (pokemon.level === level) {
+        return current;
+      }
+
+      pokemon.level = level;
+      nextTeam[index] = pokemon;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
+  }
+
+  changePokemonNature(change: PokemonNatureSelectionPayload) {
+    const options = this.natureOptions();
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === change.pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.applyNatureToPokemon(this.mapper.normalizeVM(nextTeam[index]));
+      const normalizedUrl = change.natureUrl?.trim() || null;
+      const previousNature = pokemon.selectedNature ?? null;
+      const nextNature =
+        normalizedUrl === null
+          ? null
+          : options.find((nature) => nature.url === normalizedUrl) ??
+            (previousNature?.url === normalizedUrl ? previousNature : this.mapper.natureOptionFromUrl(normalizedUrl));
+
+      if (this.areNaturesEqual(previousNature, nextNature)) {
+        return current;
+      }
+
+      pokemon.selectedNature = nextNature;
+      nextTeam[index] = pokemon;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
+  }
+
   private updatePokemonMoveSlot(
     pokemonId: number,
     slot: number,
@@ -419,11 +573,14 @@ export class TeamFacade {
   }
 
   private normalizeTeamMembers(members: PokemonVM[]): PokemonVM[] {
+    const natureOptions = this.natureOptions();
     return (members ?? []).map((member) => {
       const normalized = this.mapper.normalizeVM(member);
-      this.cacheMoveDetailsFromPokemon(normalized);
-      this.prefetchAbilityOptionsForPokemon(normalized);
-      return normalized;
+      const selectedNature = this.selectNatureOption(normalized.selectedNature, natureOptions);
+      const result = selectedNature === normalized.selectedNature ? normalized : { ...normalized, selectedNature };
+      this.cacheMoveDetailsFromPokemon(result);
+      this.prefetchAbilityOptionsForPokemon(result);
+      return result;
     });
   }
 

@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { STAT_LABELS } from '../../shared/util/constants';
-import { MoveDTO, PokemonAbilityDTO, PokemonDTO, NamedAPIResource } from '../models/pokeapi.dto';
+import { MoveDTO, NatureDTO, PokemonAbilityDTO, PokemonDTO, NamedAPIResource } from '../models/pokeapi.dto';
 import {
   PokemonAbilityOptionVM,
   PokemonItemOptionVM,
   PokemonMoveDetailVM,
   PokemonMoveOptionVM,
+  PokemonNatureOptionVM,
   PokemonVM,
 } from '../models/view.model';
 
@@ -34,9 +35,11 @@ export class PokemonMapper {
           label: STAT_LABELS[stat.stat.name] ?? this.toTitleCase(stat.stat.name.replace(/-/g, ' ')),
           value: stat.base_stat,
         })) ?? [],
+      level: 50,
       abilityOptions,
       selectedAbility: defaultAbility,
       heldItem: null,
+      selectedNature: null,
       moves:
         dto.moves?.map((move) => ({
           name: move.move.name,
@@ -60,6 +63,8 @@ export class PokemonMapper {
       this.selectAbilityOption(abilityOptions, value.selectedAbility?.url ?? null) ??
       (!value.selectedAbility && abilityOptions.length ? abilityOptions[0] : null);
     const heldItem = this.normalizeItemOption(value.heldItem);
+    const level = this.normalizeLevel(value.level);
+    const selectedNature = this.normalizeNatureOption(value.selectedNature);
 
     return {
       ...value,
@@ -77,10 +82,12 @@ export class PokemonMapper {
             value: stat.value ?? 0,
           }))
         : [],
+      level,
       abilityOptions,
       selectedAbility,
       heldItem,
       moves: this.normalizeMoveOptions(value.moves),
+      selectedNature,
       selectedMoves: this.normalizeSelectedMoves(value.selectedMoves),
     };
   }
@@ -159,6 +166,27 @@ export class PokemonMapper {
       url,
       sprite: this.buildItemSpriteUrl(name),
     });
+  }
+
+  natureOptionFromDto(dto: NatureDTO & { url: string }): PokemonNatureOptionVM {
+    return this.normalizeNatureOption({
+      name: dto.name,
+      label: this.formatNatureName(dto.name),
+      url: dto.url,
+      increasedStat: dto.increased_stat?.name ?? null,
+      decreasedStat: dto.decreased_stat?.name ?? null,
+    })!;
+  }
+
+  natureOptionFromUrl(url: string): PokemonNatureOptionVM {
+    const name = this.extractNameFromUrl(url);
+    return this.normalizeNatureOption({
+      name,
+      label: this.formatNatureName(name),
+      url,
+      increasedStat: null,
+      decreasedStat: null,
+    })!;
   }
 
   private abilityOptionFromDto(ability: PokemonAbilityDTO | undefined): PokemonAbilityOptionVM | null {
@@ -262,6 +290,52 @@ export class PokemonMapper {
     }
 
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${normalized}.png`;
+  }
+
+  private normalizeLevel(level: number | null | undefined): number {
+    const numeric = typeof level === 'number' ? level : Number(level);
+    if (!Number.isFinite(numeric)) {
+      return 50;
+    }
+
+    return Math.min(100, Math.max(1, Math.round(numeric)));
+  }
+
+  private normalizeNatureOption(
+    option:
+      | PokemonNatureOptionVM
+      | null
+      | undefined
+      | {
+          name?: string;
+          label?: string;
+          url?: string;
+          increasedStat?: string | null;
+          decreasedStat?: string | null;
+        }
+  ): PokemonNatureOptionVM | null {
+    if (!option) {
+      return null;
+    }
+
+    const url = option.url?.trim();
+    if (!url) {
+      return null;
+    }
+
+    const name = option.name ?? this.extractNameFromUrl(url);
+
+    return {
+      name,
+      label: option.label ?? this.formatNatureName(name),
+      url,
+      increasedStat: option.increasedStat ?? null,
+      decreasedStat: option.decreasedStat ?? null,
+    };
+  }
+
+  private formatNatureName(value: string): string {
+    return this.toTitleCase((value ?? '').replace(/-/g, ' '));
   }
 
   private toTitleCase(value: string): string {

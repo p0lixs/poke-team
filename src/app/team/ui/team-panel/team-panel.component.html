@@ -44,10 +44,13 @@
     <app-pokemon
       [pokemon]="p"
       [items]="items"
+      [natures]="natures"
       (remove)="remove.emit($event)"
       (moveChange)="moveChange.emit($event)"
       (abilityChange)="abilityChange.emit($event)"
       (itemChange)="itemChange.emit($event)"
+      (natureChange)="natureChange.emit($event)"
+      (levelChange)="levelChange.emit($event)"
     ></app-pokemon>
     }
   </div>

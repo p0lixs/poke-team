@@ -47,3 +47,15 @@ export interface NamedAPIResource {
   name: string;
   url: string;
 }
+
+export interface NatureDTO {
+  id: number;
+  name: string;
+  increased_stat: { name: string; url: string } | null;
+  decreased_stat: { name: string; url: string } | null;
+}
+
+export interface NatureListResponse {
+  count: number;
+  results: NamedAPIResource[];
+}
