@@ -6,7 +6,7 @@
       <h3 class="name">{{ pokemon.name }}</h3>
       <!-- pokemon.component.html (replace the type section) -->
       @if (pokemon['typeDetails'].length) {
-      <app-type-icon [typeDetails]="pokemon.typeDetails" [size]="100"></app-type-icon>
+      <app-type-icon [typeDetails]="pokemon.typeDetails" [size]="80"></app-type-icon>
       } @else if (pokemon.types.length) {
       <!-- Fallback in case typeDetails are not available yet -->
       <ul class="types">
