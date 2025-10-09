@@ -63,23 +63,34 @@
           </button>
 
           @if (items.length) {
+          <div class="item-dropdown__search">
+            <label class="item-dropdown__search-label" [attr.for]="'item-search-' + pokemon.id">Search</label>
+            <input type="search" class="item-dropdown__search-input" [id]="'item-search-' + pokemon.id"
+              name="item-search" autocomplete="off" [(ngModel)]="itemSearchTerm"
+              (ngModelChange)="onItemSearchTermChange()" placeholder="Search item" />
+          </div>
+
+          @if (filteredItems.length) {
           <div class="item-dropdown__list">
-            @for (item of items; track item.url) {
+            @for (item of filteredItems; track item.url) {
             <button type="button" class="item-dropdown__menu-item" (click)="selectItem(item.url, $event)"
               [class.is-active]="item.url === selectedItemUrl" role="option"
               [attr.aria-selected]="item.url === selectedItemUrl">
               <span class="item-dropdown__option">
-              @if (item.sprite) {
-              <img class="item-dropdown__icon" [src]="item.sprite" [alt]="item.label" referrerpolicy="no-referrer"
-                loading="lazy" />
+                @if (item.sprite) {
+                <img class="item-dropdown__icon" [src]="item.sprite" [alt]="item.label" referrerpolicy="no-referrer"
+                  loading="lazy" />
                 } @else {
                 <span class="item-dropdown__icon item-dropdown__icon--placeholder" aria-hidden="true">?</span>
-              }
-              <span class="item-dropdown__label">{{ item.label }}</span>
-            </span>
+                }
+                <span class="item-dropdown__label">{{ item.label }}</span>
+              </span>
             </button>
             }
           </div>
+          } @else {
+          <div class="item-dropdown__empty">No items found</div>
+          }
           } @else {
           <div class="item-dropdown__empty">Loading items…</div>
           }
