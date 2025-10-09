@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import {
   ItemListResponse,
   MoveDTO,
   PokemonDTO,
   PokemonListResponse,
   NamedAPIResource,
+  NatureDTO,
+  NatureListResponse,
 } from '../models/pokeapi.dto';
 
 const API = 'https://pokeapi.co/api/v2';
@@ -34,5 +36,24 @@ export class PokemonApi {
     return this.http
       .get<ItemListResponse>(`${API}/item?limit=1000&offset=0`)
       .pipe(map((response) => response.results ?? []));
+  }
+
+  getAllNatures(): Observable<(NatureDTO & { url: string })[]> {
+    return this.http.get<NatureListResponse>(`${API}/nature?limit=100&offset=0`).pipe(
+      switchMap((response) => {
+        const results = response.results ?? [];
+        if (!results.length) {
+          return of<(NatureDTO & { url: string })[]>([]);
+        }
+
+        return forkJoin(
+          results.map((resource) =>
+            this.http
+              .get<NatureDTO>(resource.url)
+              .pipe(map((dto) => ({ ...dto, url: resource.url })))
+          )
+        );
+      })
+    );
   }
 }

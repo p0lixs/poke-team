@@ -23,6 +23,7 @@
             [savedTeams]="facade.savedTeams()"
             [selectedTeamId]="facade.selectedTeamId()"
             [items]="facade.itemOptions()"
+            [natures]="facade.natureOptions()"
             (teamNameChange)="facade.setTeamName($event)"
             (selectTeam)="facade.selectTeam($event)"
             (createTeam)="facade.createCurrentTeam()"
@@ -31,6 +32,8 @@
             (moveChange)="facade.changePokemonMove($event)"
             (abilityChange)="facade.changePokemonAbility($event)"
             (itemChange)="facade.changePokemonItem($event)"
+            (natureChange)="facade.changePokemonNature($event)"
+            (levelChange)="facade.changePokemonLevel($event)"
         />
     </aside>
 </div>

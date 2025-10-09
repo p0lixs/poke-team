@@ -20,6 +20,27 @@
 
   <section class="loadout">
     <label class="loadout__field">
+      <span class="loadout__label">Level</span>
+      <input type="number" class="loadout__input" min="1" max="100" step="1" [ngModel]="levelValue"
+        (ngModelChange)="handleLevelChange($event)" />
+    </label>
+
+    <label class="loadout__field">
+      <span class="loadout__label">Nature</span>
+      <select class="loadout__select" [ngModel]="selectedNatureUrl" (ngModelChange)="handleNatureChange($event)"
+        [disabled]="!natures.length">
+        @if (natures.length) {
+        <option value="">Select nature</option>
+        @for (nature of natures; track nature.url) {
+        <option [value]="nature.url">{{ formatNatureLabel(nature) }}</option>
+        }
+        } @else {
+        <option value="" disabled>Loading natures…</option>
+        }
+      </select>
+    </label>
+
+    <label class="loadout__field">
       <span class="loadout__label">Ability</span>
       <select class="loadout__select" [ngModel]="selectedAbilityUrl" (ngModelChange)="handleAbilityChange($event)"
         [disabled]="!pokemon.abilityOptions.length">
