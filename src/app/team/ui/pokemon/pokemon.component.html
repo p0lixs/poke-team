@@ -211,7 +211,11 @@
     <div class="move-modal__body">
       <label class="move-modal__search">
         <span class="move-modal__search-label">Search</span>
-        <input type="search" class="move-modal__search-input" [(ngModel)]="moveSearchTerm"
+        <input
+          #moveSearchInput
+          type="search"
+          class="move-modal__search-input"
+          [(ngModel)]="moveSearchTerm"
           (ngModelChange)="onSearchTermChange()" placeholder="Search move" />
       </label>
 
@@ -244,53 +248,55 @@
       </div>
 
       <div class="move-modal__table-wrapper">
-        <table class="move-modal__table">
-          <thead>
-            <tr>
-              <th scope="col">Move</th>
-              <th scope="col">Type</th>
-              <th scope="col">Power</th>
-              <th scope="col">Accuracy</th>
-              <th scope="col">Category</th>
-              <th scope="col" class="move-modal__effect-column">Effect</th>
-            </tr>
-          </thead>
-          <tbody>
-            @if (!filteredMoveRows.length) {
-            <tr class="move-modal__empty">
-              <td colspan="6">No moves match the search.</td>
-            </tr>
-            } @else {
-            @for (row of filteredMoveRows; track row.url) {
-            <tr class="move-modal__row" (click)="toggleMoveSelection(row)" [class.is-selected]="isMoveSelected(row.url)"
-              [class.is-disabled]="pendingSelectionCount >= moveSlots.length && !isMoveSelected(row.url)">
-              <td data-label="Move">{{ row.label }}</td>
-              <td data-label="Type">
-                @if (row.typeIcon) {
-                <img class="move-modal__type-icon" [src]="row.typeIcon" [alt]="row.type?.name ?? 'type'" />
-                } @else if (row.type?.name) {
-                <span class="move-modal__type-pill">{{ formatTypeName(row.type?.name ?? '') }}</span>
-                } @else {
-                <span class="move-modal__type-pill">—</span>
-                }
-              </td>
-              <td data-label="Power">{{ row.power !== null ? row.power : '—' }}</td>
-              <td data-label="Accuracy">{{ row.accuracy !== null ? row.accuracy + '%' : '—' }}</td>
-              <td data-label="Category">{{ formatCategory(row.damageClass) }}</td>
-              <td data-label="Effect" class="move-modal__effect-cell">
-                @if (row.effect) {
-                <span class="move-modal__effect" [title]="row.effect">{{ row.effect }}</span>
-                } @else if (row.loading) {
-                <span class="move-modal__effect move-modal__effect--loading">Loading…</span>
-                } @else {
-                <span class="move-modal__effect">—</span>
-                }
-              </td>
-            </tr>
-            }
-            }
-          </tbody>
-        </table>
+        <div class="move-modal__table-scroll">
+          <table class="move-modal__table">
+            <thead>
+              <tr>
+                <th scope="col">Move</th>
+                <th scope="col">Type</th>
+                <th scope="col">Power</th>
+                <th scope="col">Accuracy</th>
+                <th scope="col">Category</th>
+                <th scope="col" class="move-modal__effect-column">Effect</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!filteredMoveRows.length) {
+              <tr class="move-modal__empty">
+                <td colspan="6">No moves match the search.</td>
+              </tr>
+              } @else {
+              @for (row of filteredMoveRows; track row.url) {
+              <tr class="move-modal__row" (click)="toggleMoveSelection(row)" [class.is-selected]="isMoveSelected(row.url)"
+                [class.is-disabled]="pendingSelectionCount >= moveSlots.length && !isMoveSelected(row.url)">
+                <td data-label="Move">{{ row.label }}</td>
+                <td data-label="Type">
+                  @if (row.typeIcon) {
+                  <img class="move-modal__type-icon" [src]="row.typeIcon" [alt]="row.type?.name ?? 'type'" />
+                  } @else if (row.type?.name) {
+                  <span class="move-modal__type-pill">{{ formatTypeName(row.type?.name ?? '') }}</span>
+                  } @else {
+                  <span class="move-modal__type-pill">—</span>
+                  }
+                </td>
+                <td data-label="Power">{{ row.power !== null ? row.power : '—' }}</td>
+                <td data-label="Accuracy">{{ row.accuracy !== null ? row.accuracy + '%' : '—' }}</td>
+                <td data-label="Category">{{ formatCategory(row.damageClass) }}</td>
+                <td data-label="Effect" class="move-modal__effect-cell">
+                  @if (row.effect) {
+                  <span class="move-modal__effect" [title]="row.effect">{{ row.effect }}</span>
+                  } @else if (row.loading) {
+                  <span class="move-modal__effect move-modal__effect--loading">Loading…</span>
+                  } @else {
+                  <span class="move-modal__effect">—</span>
+                  }
+                </td>
+              </tr>
+              }
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     <footer class="move-modal__footer">
