@@ -419,6 +419,11 @@ export class PokemonComponent {
     return all.find((t) => t.name === nameLc || t.label.toLowerCase() === nameLc) ?? null;
   }
 
+  get selectedTeraIconUrl(): string | null {
+    const option = this.selectedTeraOption;
+    return this.typeIcons.getTeraIconByName(option?.name ?? this.selectedTeraName);
+  }
+
   toggleTeraDropdown(event?: MouseEvent) {
     event?.preventDefault();
     event?.stopPropagation();

@@ -33,6 +33,19 @@
   min-width: 0;
 }
 
+.type-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tera-type-icon {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
 .loadout {
   display: grid;
   gap: 0.75rem;
@@ -118,6 +131,11 @@
       border-color: #6366f1;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
     }
+  }
+
+  &__trigger--tera {
+    justify-content: center;
+    padding: 0.4rem 0.6rem;
   }
 
   &.is-open {
@@ -222,10 +240,19 @@
     flex: 1;
   }
 
+  &__option--tera {
+    justify-content: center;
+  }
+
   &__icon {
     width: 20px;
     height: 20px;
     object-fit: contain;
+  }
+
+  &__icon--tera {
+    width: 32px;
+    height: 32px;
   }
 
   &__icon--placeholder {
@@ -250,6 +277,18 @@
     font-size: 0.8rem;
     color: #6b7280;
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .name {

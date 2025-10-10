@@ -7,6 +7,27 @@ import { Observable, of } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class TypeIconService {
   private cache = new Map<string, Observable<string | null>>();
+  private readonly teraIconBaseUrl = 'https://play.pokemonshowdown.com/sprites/types/';
+  private readonly teraIconMap: Record<string, string> = {
+    normal: 'tera-normal.png',
+    fire: 'tera-fire.png',
+    water: 'tera-water.png',
+    electric: 'tera-electric.png',
+    grass: 'tera-grass.png',
+    ice: 'tera-ice.png',
+    fighting: 'tera-fighting.png',
+    poison: 'tera-poison.png',
+    ground: 'tera-ground.png',
+    flying: 'tera-flying.png',
+    psychic: 'tera-psychic.png',
+    bug: 'tera-bug.png',
+    rock: 'tera-rock.png',
+    ghost: 'tera-ghost.png',
+    dragon: 'tera-dragon.png',
+    dark: 'tera-dark.png',
+    steel: 'tera-steel.png',
+    fairy: 'tera-fairy.png',
+  };
 
   constructor(private http: HttpClient) {}
 
@@ -21,6 +42,23 @@ export class TypeIconService {
 
     this.cache.set(typeUrl, req$);
     return req$;
+  }
+
+  getTeraIconByName(typeName: string | null | undefined): string | null {
+    if (!typeName) return null;
+
+    const normalized = typeName.trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+
+    const file = this.teraIconMap[normalized];
+    if (file) {
+      return `${this.teraIconBaseUrl}${file}`;
+    }
+
+    const fallback = `tera-${normalized}.png`;
+    return `${this.teraIconBaseUrl}${fallback}`;
   }
 
   /** Selects the best icon URL within `sprites` (undocumented structure). */
