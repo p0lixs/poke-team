@@ -1,6 +1,7 @@
 export interface PokemonStatVM {
   name: string;
   label: string;
+  baseValue: number;
   value: number;
   iv: number;
   ev: number;
