@@ -1,45 +1,44 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
-import {
-  ItemListResponse,
-  MoveDTO,
-  PokemonDTO,
-  PokemonListResponse,
-  NamedAPIResource,
-  NatureDTO,
-  NatureListResponse,
-} from '../models/pokeapi.dto';
-
-const API = 'https://pokeapi.co/api/v2';
+import { Injectable } from '@angular/core';
+import { ItemClient, MoveClient, PokemonClient } from 'pokenode-ts';
+import { Observable, forkJoin, from, map, of, switchMap, throwError } from 'rxjs';
+import { MoveDTO, PokemonDTO, NamedAPIResource, NatureDTO } from '../models/pokeapi.dto';
 
 @Injectable({ providedIn: 'root' })
 export class PokemonApi {
-  private http = inject(HttpClient);
+  private pokemonClient = new PokemonClient();
+  private moveClient = new MoveClient();
+  private itemClient = new ItemClient();
 
   getAllNames(): Observable<string[]> {
     // PokeAPI doesn't offer substring search; pull all names once (cached by facade)
-    return this.http
-      .get<PokemonListResponse>(`${API}/pokemon?limit=2000&offset=0`)
-      .pipe(map((r) => r.results.map((x) => x.name)));
+    return from(this.pokemonClient.listPokemons(0, 2000)).pipe(
+      map((response) => response.results?.map((x) => x.name) ?? [])
+    );
   }
 
   getPokemonByName(name: string): Observable<PokemonDTO> {
-    return this.http.get<PokemonDTO>(`${API}/pokemon/${name.toLowerCase()}`);
+    return from(this.pokemonClient.getPokemonByName(name.toLowerCase()));
   }
 
   getMoveByUrl(url: string): Observable<MoveDTO> {
-    return this.http.get<MoveDTO>(url);
+    const identifier = this.extractResourceIdentifier(url);
+    if (identifier === null) {
+      return throwError(() => new Error(`Invalid move url: ${url}`));
+    }
+
+    return typeof identifier === 'number'
+      ? from(this.moveClient.getMoveById(identifier))
+      : from(this.moveClient.getMoveByName(identifier));
   }
 
   getAllItems(): Observable<NamedAPIResource[]> {
-    return this.http
-      .get<ItemListResponse>(`${API}/item?limit=1000&offset=0`)
-      .pipe(map((response) => response.results ?? []));
+    return from(this.itemClient.listItems(0, 1000)).pipe(
+      map((response) => response.results ?? [])
+    );
   }
 
   getAllNatures(): Observable<(NatureDTO & { url: string })[]> {
-    return this.http.get<NatureListResponse>(`${API}/nature?limit=100&offset=0`).pipe(
+    return from(this.pokemonClient.listNatures(0, 100)).pipe(
       switchMap((response) => {
         const results = response.results ?? [];
         if (!results.length) {
@@ -48,12 +47,28 @@ export class PokemonApi {
 
         return forkJoin(
           results.map((resource) =>
-            this.http
-              .get<NatureDTO>(resource.url)
-              .pipe(map((dto) => ({ ...dto, url: resource.url })))
+            from(this.pokemonClient.getNatureByName(resource.name)).pipe(
+              map((dto) => ({ ...dto, url: resource.url }))
+            )
           )
         );
       })
     );
+  }
+
+  private extractResourceIdentifier(url: string): string | number | null {
+    try {
+      const pathname = new URL(url).pathname;
+      const segments = pathname.split('/').filter(Boolean);
+      const lastSegment = segments.pop();
+      if (!lastSegment) {
+        return null;
+      }
+
+      const numericId = Number(lastSegment);
+      return Number.isNaN(numericId) ? lastSegment : numericId;
+    } catch {
+      return null;
+    }
   }
 }
