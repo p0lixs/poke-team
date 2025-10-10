@@ -9,24 +9,24 @@ export class TypeIconService {
   private cache = new Map<string, Observable<string | null>>();
   private readonly teraIconBaseUrl = 'https://play.pokemonshowdown.com/sprites/types/';
   private readonly teraIconMap: Record<string, string> = {
-    normal: 'tera-normal.png',
-    fire: 'tera-fire.png',
-    water: 'tera-water.png',
-    electric: 'tera-electric.png',
-    grass: 'tera-grass.png',
-    ice: 'tera-ice.png',
-    fighting: 'tera-fighting.png',
-    poison: 'tera-poison.png',
-    ground: 'tera-ground.png',
-    flying: 'tera-flying.png',
-    psychic: 'tera-psychic.png',
-    bug: 'tera-bug.png',
-    rock: 'tera-rock.png',
-    ghost: 'tera-ghost.png',
-    dragon: 'tera-dragon.png',
-    dark: 'tera-dark.png',
-    steel: 'tera-steel.png',
-    fairy: 'tera-fairy.png',
+    normal: 'TeraNormal.png',
+    fire: 'TeraFire.png',
+    water: 'TeraWater.png',
+    electric: 'TeraElectric.png',
+    grass: 'TeraGrass.png',
+    ice: 'TeraIce.png',
+    fighting: 'TeraFighting.png',
+    poison: 'TeraPoison.png',
+    ground: 'TeraGround.png',
+    flying: 'TeraFlying.png',
+    psychic: 'TeraPsychic.png',
+    bug: 'TeraBug.png',
+    rock: 'TeraRock.png',
+    ghost: 'TeraGhost.png',
+    dragon: 'TeraDragon.png',
+    dark: 'TeraDark.png',
+    steel: 'TeraSteel.png',
+    fairy: 'TeraFairy.png',
   };
 
   constructor(private http: HttpClient) {}
@@ -47,7 +47,7 @@ export class TypeIconService {
   getTeraIconByName(typeName: string | null | undefined): string | null {
     if (!typeName) return null;
 
-    const normalized = typeName.trim().toLowerCase();
+    const normalized = typeName.trim();
     if (!normalized) {
       return null;
     }
@@ -57,7 +57,7 @@ export class TypeIconService {
       return `${this.teraIconBaseUrl}${file}`;
     }
 
-    const fallback = `tera-${normalized}.png`;
+    const fallback = `Tera${normalized}.png`;
     return `${this.teraIconBaseUrl}${fallback}`;
   }
 
