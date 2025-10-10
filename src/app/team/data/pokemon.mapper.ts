@@ -7,7 +7,13 @@ import {
   STAT_LABELS,
   STAT_TOTAL_EV_MAX,
 } from '../../shared/util/constants';
-import { MoveDTO, NatureDTO, PokemonAbilityDTO, PokemonDTO, NamedAPIResource } from '../models/pokeapi.dto';
+import {
+  MoveDTO,
+  NamedAPIResource,
+  NatureDTO,
+  PokemonAbilityDTO,
+  PokemonDTO,
+} from '../models/pokeapi.dto';
 import {
   PokemonAbilityOptionVM,
   PokemonItemOptionVM,
@@ -27,7 +33,8 @@ export class PokemonMapper {
       .map((ability) => this.abilityOptionFromDto(ability))
       .filter((ability): ability is PokemonAbilityOptionVM => !!ability);
 
-    const defaultAbility = abilityOptions.find((option) => !option.isHidden) ?? abilityOptions[0] ?? null;
+    const defaultAbility =
+      abilityOptions.find((option) => !option.isHidden) ?? abilityOptions[0] ?? null;
 
     const base: PokemonVM = {
       id: dto.id,
@@ -127,7 +134,8 @@ export class PokemonMapper {
       return null;
     }
 
-    const type = detail.type && detail.type.url ? { name: detail.type.name, url: detail.type.url } : null;
+    const type =
+      detail.type && detail.type.url ? { name: detail.type.name, url: detail.type.url } : null;
 
     return {
       name: this.formatMoveName(detail.name ?? this.extractNameFromUrl(detail.url)),
@@ -194,7 +202,9 @@ export class PokemonMapper {
     })!;
   }
 
-  private abilityOptionFromDto(ability: PokemonAbilityDTO | undefined): PokemonAbilityOptionVM | null {
+  private abilityOptionFromDto(
+    ability: PokemonAbilityDTO | undefined
+  ): PokemonAbilityOptionVM | null {
     if (!ability?.ability?.url) {
       return null;
     }
@@ -261,7 +271,11 @@ export class PokemonMapper {
   }
 
   private normalizeItemOption(
-    option: PokemonItemOptionVM | (Partial<PokemonItemOptionVM> & { url?: string }) | null | undefined
+    option:
+      | PokemonItemOptionVM
+      | (Partial<PokemonItemOptionVM> & { url?: string })
+      | null
+      | undefined
   ): PokemonItemOptionVM | null {
     if (!option || typeof option.url !== 'string') {
       return null;
@@ -301,8 +315,11 @@ export class PokemonMapper {
     const normalizedStats: PokemonStatVM[] = Array.isArray(stats)
       ? stats.map((stat) => {
           const name = (stat?.name ?? '').toString();
-          const label = stat?.label ?? STAT_LABELS[name] ?? this.toTitleCase(name.replace(/-/g, ' '));
-          const baseValue = this.clampBaseStat((stat as PokemonStatVM | undefined)?.baseValue ?? stat?.value);
+          const label =
+            stat?.label ?? STAT_LABELS[name] ?? this.toTitleCase(name.replace(/-/g, ' '));
+          const baseValue = this.clampBaseStat(
+            (stat as PokemonStatVM | undefined)?.baseValue ?? stat?.value
+          );
           const value = this.clampBaseStat(stat?.value ?? baseValue);
           const iv = this.clampInteger(stat?.iv, STAT_IV_MIN, STAT_IV_MAX);
           const ev = this.clampInteger(stat?.ev, STAT_EV_MIN, STAT_EV_MAX);
@@ -347,32 +364,52 @@ export class PokemonMapper {
     const decreased = nature?.decreasedStat ?? null;
 
     return stats.map((stat) => {
-      const evContribution = Math.floor(stat.ev / 4);
-      const baseComponent = Math.floor(((stat.baseValue * 2 + stat.iv + evContribution) * level) / 100);
-      const natureMultiplier = this.getNatureMultiplier(stat.name, increased, decreased);
-      const calculated = Math.floor((baseComponent + 5) * natureMultiplier);
+      const isHP = stat.name.toLowerCase() === 'hp';
+
+      // EV en bloques de 4 (entero)
+      const evQuarter = stat.ev / 4;
+
+      if (isHP) {
+        // HP = floor(((2*Base + IV + floor(EV/4)) * Level) / 100) + Level + 10
+        // Caso especial Shedinja (Base HP = 1) => HP = 1
+        // const isShedinja = stat.speciesName?.toLowerCase() === 'shedinja' || stat.baseValue === 1;
+        const baseHP = Math.floor(((stat.baseValue * 2 + stat.iv + evQuarter) * level) / 100);
+        const hp = baseHP + level + 10;
+
+        return {
+          ...stat,
+          value: hp,
+        } satisfies PokemonStatVM;
+      }
+
+      // No-HP: floor( ( floor(((2*Base + IV + floor(EV/4)) * Level)/100) + 5 ) * nature )
+      const baseComponent = ((stat.baseValue * 2 + stat.iv + evQuarter) * level) / 100;
+      const preNature = baseComponent + 5;
+
+      // Naturaleza en porcentaje entero (110/100/90)
+      const naturePercent = this.getNaturePercent(stat.name, increased, decreased);
+      const finalStat = Math.floor((preNature * naturePercent) / 100);
 
       return {
         ...stat,
-        value: Math.max(0, calculated),
+        value: Math.max(1, finalStat),
       } satisfies PokemonStatVM;
     });
   }
 
-  private getNatureMultiplier(
+  // Devuelve 110, 100 o 90 (evita floats)
+  private getNaturePercent(
     statName: string,
     increased: string | null,
     decreased: string | null
   ): number {
-    if (increased && statName === increased) {
-      return 1.1;
-    }
+    const name = statName.toLowerCase();
+    const inc = increased?.toLowerCase() ?? '';
+    const dec = decreased?.toLowerCase() ?? '';
 
-    if (decreased && statName === decreased) {
-      return 0.9;
-    }
-
-    return 1;
+    if (inc && name === inc && (!dec || name !== dec)) return 110; // +10%
+    if (dec && name === dec && (!inc || name !== inc)) return 90; // -10%
+    return 100; // neutral
   }
 
   private clampInteger(value: unknown, min: number, max: number): number {
@@ -483,9 +520,10 @@ export class PokemonMapper {
     }
 
     const effectChance = dto.effect_chance ?? null;
-    const normalized = effectChance === null || effectChance === undefined
-      ? base
-      : base.replace(/\$effect_chance/g, String(effectChance));
+    const normalized =
+      effectChance === null || effectChance === undefined
+        ? base
+        : base.replace(/\$effect_chance/g, String(effectChance));
 
     return normalized.replace(/\s+/g, ' ').trim();
   }
@@ -496,12 +534,16 @@ export class PokemonMapper {
     }
 
     return options
-      .filter((option): option is PokemonMoveOptionVM => !!option && typeof option.url === 'string' && !!option.url.trim())
+      .filter(
+        (option): option is PokemonMoveOptionVM =>
+          !!option && typeof option.url === 'string' && !!option.url.trim()
+      )
       .map((option) => ({
         name: option.name,
         label: option.label ?? this.formatMoveName(option.name),
         url: option.url,
-        type: option.type && option.type.url ? { name: option.type.name, url: option.type.url } : null,
+        type:
+          option.type && option.type.url ? { name: option.type.name, url: option.type.url } : null,
         power: option.power ?? null,
         accuracy: option.accuracy ?? null,
         damageClass: option.damageClass ?? null,
