@@ -501,8 +501,8 @@ export class TeamFacade {
         return current;
       }
 
-      pokemon.level = level;
-      nextTeam[index] = pokemon;
+      const updated = this.recalculatePokemonStats({ ...pokemon, level });
+      nextTeam[index] = updated;
       this.syncDraftMembers(nextTeam);
       return nextTeam;
     });
@@ -555,11 +555,16 @@ export class TeamFacade {
         return current;
       }
 
-      pokemon.selectedNature = nextNature;
-      nextTeam[index] = pokemon;
+      const updated = this.recalculatePokemonStats({ ...pokemon, selectedNature: nextNature });
+      nextTeam[index] = updated;
       this.syncDraftMembers(nextTeam);
       return nextTeam;
     });
+  }
+
+  private recalculatePokemonStats(pokemon: PokemonVM): PokemonVM {
+    const normalized = this.mapper.normalizeVM(pokemon);
+    return this.applyNatureToPokemon(normalized);
   }
 
   private updatePokemonMoveSlot(
