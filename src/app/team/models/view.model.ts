@@ -15,6 +15,7 @@ export interface PokemonVM {
   typeDetails: { name: string; url: string }[];
   stats: PokemonStatVM[];
   level: number;
+  teraType: string | null;
   abilityOptions: PokemonAbilityOptionVM[];
   selectedAbility: PokemonAbilityOptionVM | null;
   heldItem: PokemonItemOptionVM | null;
