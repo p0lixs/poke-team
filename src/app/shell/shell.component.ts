@@ -12,7 +12,7 @@ import { RouterOutlet } from '@angular/router';
         border-bottom: 1px solid #eee;
       }
       main {
-        max-width: 1080px;
+        max-width: 1440px;
         margin: 0 auto;
         padding: 1rem;
       }
