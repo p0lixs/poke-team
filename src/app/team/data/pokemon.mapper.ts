@@ -50,7 +50,7 @@ export class PokemonMapper {
           label: STAT_LABELS[stat.stat.name] ?? this.toTitleCase(stat.stat.name.replace(/-/g, ' ')),
           baseValue: stat.base_stat,
           value: stat.base_stat,
-          iv: STAT_IV_MIN,
+          iv: STAT_IV_MAX,
           ev: STAT_EV_MIN,
         })) ?? []
       ),
@@ -321,7 +321,11 @@ export class PokemonMapper {
             (stat as PokemonStatVM | undefined)?.baseValue ?? stat?.value
           );
           const value = this.clampBaseStat(stat?.value ?? baseValue);
-          const iv = this.clampInteger(stat?.iv, STAT_IV_MIN, STAT_IV_MAX);
+          const iv = this.clampInteger(
+            stat?.iv ?? STAT_IV_MAX,
+            STAT_IV_MIN,
+            STAT_IV_MAX
+          );
           const ev = this.clampInteger(stat?.ev, STAT_EV_MIN, STAT_EV_MAX);
 
           return {
