@@ -24,6 +24,8 @@ import {
   PokemonVM,
 } from '../models/view.model';
 
+const LATEST_VERSION_GROUPS = new Set(['scarlet-violet', 'the-teal-mask', 'the-indigo-disk']);
+
 @Injectable({ providedIn: 'root' })
 export class PokemonMapper {
   toVM(dto: PokemonDTO): PokemonVM {
@@ -35,6 +37,8 @@ export class PokemonMapper {
 
     const defaultAbility =
       abilityOptions.find((option) => !option.isHidden) ?? abilityOptions[0] ?? null;
+
+    const latestGenerationMoves = this.filterLatestGenerationMoves(dto.moves);
 
     const base: PokemonVM = {
       id: dto.id,
@@ -60,7 +64,7 @@ export class PokemonMapper {
       heldItem: null,
       selectedNature: null,
       moves:
-        dto.moves?.map((move) => ({
+        latestGenerationMoves.map((move) => ({
           name: move.move.name,
           label: this.formatMoveName(move.move.name),
           url: move.move.url,
@@ -570,5 +574,27 @@ export class PokemonMapper {
     if (!url) return '';
     const segments = url.split('/').filter(Boolean);
     return segments[segments.length - 1] ?? '';
+  }
+
+  private filterLatestGenerationMoves(
+    moves: PokemonDTO['moves'] | undefined
+  ): PokemonDTO['moves'] {
+    if (!Array.isArray(moves)) {
+      return [];
+    }
+
+    const filtered = moves.filter((move) => {
+      const details = move?.version_group_details ?? [];
+      if (!details.length) {
+        return false;
+      }
+
+      return details.some((detail) => {
+        const name = detail?.version_group?.name ?? '';
+        return !!name && LATEST_VERSION_GROUPS.has(name);
+      });
+    });
+
+    return filtered;
   }
 }
