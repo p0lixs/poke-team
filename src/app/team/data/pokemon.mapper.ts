@@ -41,6 +41,7 @@ export class PokemonMapper {
         dto.stats?.map((stat) => ({
           name: stat.stat.name,
           label: STAT_LABELS[stat.stat.name] ?? this.toTitleCase(stat.stat.name.replace(/-/g, ' ')),
+          baseValue: stat.base_stat,
           value: stat.base_stat,
           iv: STAT_IV_MIN,
           ev: STAT_EV_MIN,
@@ -76,6 +77,8 @@ export class PokemonMapper {
     const heldItem = this.normalizeItemOption(value.heldItem);
     const level = this.normalizeLevel(value.level);
     const selectedNature = this.normalizeNatureOption(value.selectedNature);
+    const normalizedStats = this.normalizeStats(value.stats);
+    const stats = this.calculateStatValues(normalizedStats, level, selectedNature);
 
     return {
       ...value,
@@ -83,7 +86,7 @@ export class PokemonMapper {
       typeDetails: Array.isArray(value.typeDetails)
         ? value.typeDetails.map((type) => ({ name: type.name, url: type.url }))
         : [],
-      stats: this.normalizeStats(value.stats),
+      stats,
       level,
       abilityOptions,
       selectedAbility,
@@ -299,13 +302,15 @@ export class PokemonMapper {
       ? stats.map((stat) => {
           const name = (stat?.name ?? '').toString();
           const label = stat?.label ?? STAT_LABELS[name] ?? this.toTitleCase(name.replace(/-/g, ' '));
-          const value = this.clampBaseStat(stat?.value);
+          const baseValue = this.clampBaseStat((stat as PokemonStatVM | undefined)?.baseValue ?? stat?.value);
+          const value = this.clampBaseStat(stat?.value ?? baseValue);
           const iv = this.clampInteger(stat?.iv, STAT_IV_MIN, STAT_IV_MAX);
           const ev = this.clampInteger(stat?.ev, STAT_EV_MIN, STAT_EV_MAX);
 
           return {
             name,
             label,
+            baseValue,
             value,
             iv,
             ev,
@@ -331,6 +336,43 @@ export class PokemonMapper {
     }
 
     return normalizedStats;
+  }
+
+  private calculateStatValues(
+    stats: PokemonStatVM[],
+    level: number,
+    nature: PokemonNatureOptionVM | null
+  ): PokemonStatVM[] {
+    const increased = nature?.increasedStat ?? null;
+    const decreased = nature?.decreasedStat ?? null;
+
+    return stats.map((stat) => {
+      const evContribution = Math.floor(stat.ev / 4);
+      const baseComponent = Math.floor(((stat.baseValue * 2 + stat.iv + evContribution) * level) / 100);
+      const natureMultiplier = this.getNatureMultiplier(stat.name, increased, decreased);
+      const calculated = Math.floor((baseComponent + 5) * natureMultiplier);
+
+      return {
+        ...stat,
+        value: Math.max(0, calculated),
+      } satisfies PokemonStatVM;
+    });
+  }
+
+  private getNatureMultiplier(
+    statName: string,
+    increased: string | null,
+    decreased: string | null
+  ): number {
+    if (increased && statName === increased) {
+      return 1.1;
+    }
+
+    if (decreased && statName === decreased) {
+      return 0.9;
+    }
+
+    return 1;
   }
 
   private clampInteger(value: unknown, min: number, max: number): number {

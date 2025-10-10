@@ -629,6 +629,7 @@ export class TeamFacade {
         stat.value === other.value &&
         stat.iv === other.iv &&
         stat.ev === other.ev &&
+        stat.baseValue === other.baseValue &&
         stat.label === other.label
       );
     });
