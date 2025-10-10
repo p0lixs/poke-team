@@ -40,10 +40,20 @@
   flex-wrap: wrap;
 }
 
-.tera-type-icon {
-  height: 28px;
-  width: auto;
-  object-fit: contain;
+.type-group__tera {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-left: 0.25rem;
+  border-left: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.type-group__tera-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7280;
 }
 
 .loadout {
@@ -53,7 +63,6 @@
   grid-template-areas:
     'level ability'
     'nature nature'
-    'tera tera'
     'item item';
 
   &__field {
@@ -96,7 +105,27 @@
 .loadout__field--nature { grid-area: nature; }
 .loadout__field--ability { grid-area: ability; }
 .loadout__field--item { grid-area: item; }
-.loadout__field--tera { grid-area: tera; }
+
+.item-dropdown--inline {
+  min-width: 0;
+}
+
+.item-dropdown--inline .item-dropdown__trigger {
+  width: auto;
+  min-width: 0;
+  padding: 0.3rem 0.6rem;
+}
+
+.item-dropdown__trigger--tera {
+  justify-content: flex-start;
+  padding: 0.3rem 0.6rem;
+}
+
+.item-dropdown__label--tera {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111827;
+}
 .item-dropdown {
   position: relative;
 
@@ -131,11 +160,6 @@
       border-color: #6366f1;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
     }
-  }
-
-  &__trigger--tera {
-    justify-content: center;
-    padding: 0.4rem 0.6rem;
   }
 
   &.is-open {
@@ -241,7 +265,7 @@
   }
 
   &__option--tera {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   &__icon {

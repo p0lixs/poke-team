@@ -27,6 +27,7 @@ export class TypeIconService {
     dark: 'TeraDark.png',
     steel: 'TeraSteel.png',
     fairy: 'TeraFairy.png',
+    stellar: 'TeraStellar.png',
   };
 
   constructor(private http: HttpClient) {}

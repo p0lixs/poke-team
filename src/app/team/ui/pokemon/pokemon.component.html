@@ -17,10 +17,59 @@
         </ul>
         }
 
-        @if (selectedTeraIconUrl && selectedTeraOption) {
-        <img class="tera-type-icon" [src]="selectedTeraIconUrl" referrerpolicy="no-referrer"
-          [alt]="selectedTeraOption.label + ' Tera Type'" [title]="selectedTeraOption.label + ' Tera Type'" loading="lazy" />
-        }
+        <div class="type-group__tera">
+          <span class="type-group__tera-label">Tera Type</span>
+          <div class="item-dropdown item-dropdown--inline" [class.is-open]="isTeraDropdownOpen">
+            <button type="button" class="item-dropdown__trigger item-dropdown__trigger--tera"
+              (click)="toggleTeraDropdown($event)" aria-haspopup="listbox"
+              [attr.aria-expanded]="isTeraDropdownOpen">
+              @if (selectedTeraOption && selectedTeraIconUrl) {
+              <span class="item-dropdown__option item-dropdown__option--tera" aria-hidden="true">
+                <img class="item-dropdown__icon item-dropdown__icon--tera" [src]="selectedTeraIconUrl"
+                  [alt]="selectedTeraOption.label" referrerpolicy="no-referrer" loading="lazy" />
+                <span class="item-dropdown__label item-dropdown__label--tera">{{ selectedTeraOption.label }}</span>
+              </span>
+              <span class="sr-only">{{ selectedTeraOption.label }} Tera Type</span>
+              } @else {
+              <span class="item-dropdown__placeholder">Select type</span>
+              }
+            </button>
+
+            @if (isTeraDropdownOpen) {
+            <div class="item-dropdown__menu" role="listbox">
+              <div class="item-dropdown__search">
+                <label class="item-dropdown__search-label" [attr.for]="'tera-search-' + pokemon.id">Search</label>
+                <input type="search" class="item-dropdown__search-input" [id]="'tera-search-' + pokemon.id"
+                  name="tera-search" autocomplete="off" [(ngModel)]="teraSearchTerm"
+                  (ngModelChange)="onTeraSearchTermChange()" placeholder="Search type" />
+              </div>
+
+              @if (filteredTeraTypes.length) {
+              <div class="item-dropdown__list">
+                @for (t of filteredTeraTypes; track t.name) {
+                <button type="button" class="item-dropdown__menu-item" (click)="selectTeraType(t.name, $event)"
+                  [class.is-active]="selectedTeraOption?.name === t.name" role="option"
+                  [attr.aria-selected]="selectedTeraOption?.name === t.name">
+                  <span class="item-dropdown__option">
+                    @let iconUrl = typeIcons.getTeraIconByName(t.name);
+                    @if (iconUrl) {
+                    <img class="item-dropdown__icon item-dropdown__icon--tera" [src]="iconUrl" [alt]="t.label"
+                      referrerpolicy="no-referrer" loading="lazy" />
+                    } @else {
+                    <span class="item-dropdown__icon item-dropdown__icon--placeholder" aria-hidden="true">T</span>
+                    }
+                    <span class="item-dropdown__label">{{ t.label }}</span>
+                  </span>
+                </button>
+                }
+              </div>
+              } @else {
+              <div class="item-dropdown__empty">No results</div>
+              }
+            </div>
+            }
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -45,58 +94,6 @@
         <option value="" disabled>Loading natures…</option>
         }
       </select>
-    </label>
-
-    <label class="loadout__field loadout__field--tera">
-      <span class="loadout__label">Tera Type</span>
-      <div class="item-dropdown" [class.is-open]="isTeraDropdownOpen">
-        <button type="button" class="item-dropdown__trigger item-dropdown__trigger--tera" (click)="toggleTeraDropdown($event)"
-          aria-haspopup="listbox" [attr.aria-expanded]="isTeraDropdownOpen">
-          @if (selectedTeraOption && selectedTeraIconUrl) {
-          <span class="item-dropdown__option item-dropdown__option--tera" aria-hidden="true">
-            <img class="item-dropdown__icon item-dropdown__icon--tera" [src]="selectedTeraIconUrl"
-              [alt]="selectedTeraOption.label" referrerpolicy="no-referrer" loading="lazy" />
-          </span>
-          <span class="sr-only">{{ selectedTeraOption.label }} Tera Type</span>
-          } @else {
-          <span class="item-dropdown__placeholder">Select type</span>
-          }
-        </button>
-
-        @if (isTeraDropdownOpen) {
-        <div class="item-dropdown__menu" role="listbox">
-          <div class="item-dropdown__search">
-            <label class="item-dropdown__search-label" [attr.for]="'tera-search-' + pokemon.id">Search</label>
-            <input type="search" class="item-dropdown__search-input" [id]="'tera-search-' + pokemon.id"
-              name="tera-search" autocomplete="off" [(ngModel)]="teraSearchTerm"
-              (ngModelChange)="onTeraSearchTermChange()" placeholder="Search type" />
-          </div>
-
-          @if (filteredTeraTypes.length) {
-          <div class="item-dropdown__list">
-            @for (t of filteredTeraTypes; track t.name) {
-            <button type="button" class="item-dropdown__menu-item" (click)="selectTeraType(t.name, $event)"
-              [class.is-active]="selectedTeraOption?.name === t.name" role="option"
-              [attr.aria-selected]="selectedTeraOption?.name === t.name">
-              <span class="item-dropdown__option">
-                @let iconUrl = typeIcons.getTeraIconByName(t.name);
-                @if (iconUrl) {
-                <img class="item-dropdown__icon item-dropdown__icon--tera" [src]="iconUrl" [alt]="t.label"
-                  referrerpolicy="no-referrer" loading="lazy" />
-                } @else {
-                <span class="item-dropdown__icon item-dropdown__icon--placeholder" aria-hidden="true">T</span>
-                }
-                <span class="item-dropdown__label">{{ t.label }}</span>
-              </span>
-            </button>
-            }
-          </div>
-          } @else {
-          <div class="item-dropdown__empty">No results</div>
-          }
-        </div>
-        }
-      </div>
     </label>
 
     <label class="loadout__field loadout__field--ability">
