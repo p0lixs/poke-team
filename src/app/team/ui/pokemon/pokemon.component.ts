@@ -6,6 +6,7 @@ import {
   HostListener,
   Input,
   Output,
+  ViewChild,
   inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -94,6 +95,15 @@ export class PokemonComponent {
   private readonly api = inject(PokemonApi);
   private readonly mapper = inject(PokemonMapper);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private moveSearchInputRef: ElementRef<HTMLInputElement> | null = null;
+
+  @ViewChild('moveSearchInput')
+  set moveSearchInput(ref: ElementRef<HTMLInputElement> | undefined) {
+    this.moveSearchInputRef = ref ?? null;
+    if (this.isMoveModalOpen && ref) {
+      this.focusMoveSearchInput();
+    }
+  }
 
   @Input() set pokemon(value: PokemonVM) {
     const level = this.clampLevel(value.level ?? 50);
@@ -162,6 +172,7 @@ export class PokemonComponent {
       next: () => {
         this.isMoveModalOpen = true;
         this.initializeMoveTableRows();
+        this.focusMoveSearchInput();
       },
       complete: () => {
         this.moveModalPreparationSub = null;
@@ -181,6 +192,20 @@ export class PokemonComponent {
 
   onSearchTermChange() {
     this.refreshFilteredMoveRows();
+  }
+
+  private focusMoveSearchInput() {
+    setTimeout(() => {
+      if (!this.isMoveModalOpen) {
+        return;
+      }
+
+      const element = this.moveSearchInputRef?.nativeElement;
+      if (element) {
+        element.focus();
+        element.select();
+      }
+    });
   }
 
   toggleMoveSelection(row: MoveTableRow) {
