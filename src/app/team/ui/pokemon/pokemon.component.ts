@@ -81,7 +81,7 @@ export class PokemonComponent {
   selectedItemUrl = '';
   selectedNatureUrl = '';
   isTeraDropdownOpen = false;
-  filteredTeraTypes: { name: string; label: string; url: string }[] = [];
+  filteredTeraTypes: { name: string; label: string; url: string | null }[] = [];
   selectedTeraName: string | null = null;
   levelValue = 50;
   isItemDropdownOpen = false;
@@ -142,7 +142,8 @@ export class PokemonComponent {
     this.selectedItemUrl = this._pokemon.heldItem?.url ?? '';
     this.levelValue = level;
     this.selectedNatureUrl = this._pokemon.selectedNature?.url ?? '';
-    this.selectedTeraName = this._pokemon.teraType || this.inferDefaultTeraType(this._pokemon);
+    const incomingTera = this.normalizeTeraSelectionValue(value.teraType);
+    this.selectedTeraName = incomingTera || this.inferDefaultTeraType(this._pokemon);
     this.initializeMoveDetailCache();
     this.prepareMoveIcons();
     this.ensureAllMoveDetailsLoaded().subscribe(() => {
@@ -380,8 +381,22 @@ export class PokemonComponent {
   }
 
   // --- Tera Type dropdown ---
-  private getAllTypes(): { name: string; label: string; url: string }[] {
-    const names = [
+  private normalizeTeraSelectionValue(value: string | null | undefined): string | null {
+    const normalized = (value ?? '').trim();
+    if (!normalized) {
+      return null;
+    }
+
+    const slug = normalized.replace(/\s+/g, '').toLowerCase();
+    if (slug === 'terastellar' || slug === 'stellar') {
+      return 'Tera Stellar';
+    }
+
+    return this.toTitleCase(normalized);
+  }
+
+  private getAllTypes(): { name: string; label: string; url: string | null }[] {
+    const regularTypes = [
       'normal',
       'fire',
       'water',
@@ -400,12 +415,22 @@ export class PokemonComponent {
       'dark',
       'steel',
       'fairy',
-    ];
-    return names.map((name) => ({
+    ] as const;
+
+    const mapped = regularTypes.map((name) => ({
       name,
       label: this.toTitleCase(name),
       url: `https://pokeapi.co/api/v2/type/${name}`,
     }));
+
+    return [
+      ...mapped,
+      {
+        name: 'stellar',
+        label: 'Tera Stellar',
+        url: null,
+      },
+    ];
   }
 
   private inferDefaultTeraType(p: PokemonVM): string | null {
@@ -413,7 +438,7 @@ export class PokemonComponent {
     return type ? this.toTitleCase(type) : null;
   }
 
-  get selectedTeraOption(): { name: string; label: string; url: string } | null {
+  get selectedTeraOption(): { name: string; label: string; url: string | null } | null {
     const nameLc = (this.selectedTeraName || '').toLowerCase();
     const all = this.getAllTypes();
     return all.find((t) => t.name === nameLc || t.label.toLowerCase() === nameLc) ?? null;
@@ -439,7 +464,7 @@ export class PokemonComponent {
   selectTeraType(name: string, event?: MouseEvent) {
     event?.preventDefault();
     event?.stopPropagation();
-    const formatted = this.toTitleCase(name);
+    const formatted = this.normalizeTeraSelectionValue(name) ?? this.toTitleCase(name);
     this.selectedTeraName = formatted;
     this.isTeraDropdownOpen = false;
     this.teraTypeChange.emit({ pokemonId: this.pokemon.id, teraType: formatted });

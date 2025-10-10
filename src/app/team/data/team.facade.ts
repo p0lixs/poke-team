@@ -840,7 +840,16 @@ export class TeamFacade {
 
   private normalizeTeraType(value: string | null): string | null {
     const formatted = this.formatTitle(value);
-    return formatted || null;
+    if (!formatted) {
+      return null;
+    }
+
+    const slug = formatted.replace(/\s+/g, '').toLowerCase();
+    if (slug === 'terastellar' || slug === 'stellar') {
+      return 'Tera Stellar';
+    }
+
+    return formatted;
   }
 
   private inferDefaultTeraType(pokemon: PokemonVM): string | null {
