@@ -1,10 +1,10 @@
 export const STAT_MAX_VALUES: Record<string, number> = {
-  hp: 255,
-  attack: 190,
-  defense: 250,
-  'special-attack': 194,
-  'special-defense': 250,
-  speed: 200,
+  hp: 714,
+  attack: 504,
+  defense: 548,
+  'special-attack': 504,
+  'special-defense': 548,
+  speed: 548,
 };
 
 export const STAT_IV_MIN = 0;
