@@ -41,6 +41,8 @@ export class TeamPanelComponent {
   @Output() levelChange = new EventEmitter<PokemonLevelChangePayload>();
   @Output() statChange = new EventEmitter<PokemonStatAllocationPayload>();
   @Output() renameTeam = new EventEmitter<{ id: string; name: string }>();
+  @Output() openImport = new EventEmitter<void>();
+  @Output() openExport = new EventEmitter<void>();
 
   // UI state
   editMode: EditMode = 'none';

@@ -55,11 +55,23 @@
       background: #4b5563;
     }
   }
+  &.secondary {
+    background: #10b981;
+    &:hover {
+      background: #059669;
+    }
+  }
 
   &:disabled {
     opacity: 0.6;
     cursor: default;
   }
+}
+
+.import-export {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .autosave-note {

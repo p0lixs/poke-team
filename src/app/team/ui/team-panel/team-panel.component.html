@@ -35,6 +35,13 @@
       </div>
     </label>
 
+    <div class="import-export">
+      <button class="btn secondary" type="button" (click)="openImport.emit()">Import</button>
+      <button class="btn secondary" type="button" (click)="openExport.emit()" [disabled]="!team.length">
+        Export
+      </button>
+    </div>
+
 
   </div>
 

@@ -3,9 +3,11 @@ import { PokemonApi } from './pokemon.api';
 import { PokemonMapper } from './pokemon.mapper';
 import {
   PokemonAbilitySelectionPayload,
+  PokemonAbilityOptionVM,
   PokemonItemOptionVM,
   PokemonItemSelectionPayload,
   PokemonMoveDetailVM,
+  PokemonMoveOptionVM,
   PokemonMoveSelectionPayload,
   PokemonNatureOptionVM,
   PokemonNatureSelectionPayload,
@@ -15,12 +17,35 @@ import {
   PokemonVM,
 } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  firstValueFrom,
+  forkJoin,
+  map,
+  of,
+  switchMap,
+  take,
+  tap,
+} from 'rxjs';
 import { PokemonDTO } from '../models/pokeapi.dto';
 import { TeamRepository } from './team.repository';
 import { SavedTeam } from '../models/team.model';
+import { STAT_IV_MAX } from '../../shared/util/constants';
+import { parseTeamText } from './team-text.parser';
+import { ParsedPokemonSet, ParsedStatKey } from './team-text.types';
 
 const MAX_TEAM = 6;
+
+const STAT_ABBREVIATIONS: Record<ParsedStatKey, string> = {
+  hp: 'HP',
+  attack: 'Atk',
+  defense: 'Def',
+  'special-attack': 'SpA',
+  'special-defense': 'SpD',
+  speed: 'Spe',
+};
 
 @Injectable({ providedIn: 'root' })
 export class TeamFacade {
@@ -230,6 +255,67 @@ export class TeamFacade {
   clearTeam() {
     this.team.set([]);
     this.syncDraftMembers([]);
+  }
+
+  exportTeamAsText(): string {
+    const members = this.team().map((member) => this.mapper.normalizeVM(member));
+    if (!members.length) {
+      return '';
+    }
+
+    return members
+      .map((pokemon) => this.formatPokemonForExport(pokemon))
+      .filter((block) => !!block)
+      .join('\n\n');
+  }
+
+  async importTeamFromText(text: string): Promise<{ success: boolean; error?: string }> {
+    const parsed = parseTeamText(text);
+    if (!parsed.length) {
+      return { success: false, error: 'No Pokémon found in the provided text.' };
+    }
+
+    const limited = parsed.slice(0, MAX_TEAM);
+    const pokemonDtos: PokemonDTO[] = [];
+
+    for (const set of limited) {
+      const slug = this.slugifyIdentifier(set.species);
+      if (!slug) {
+        return {
+          success: false,
+          error: `Unable to determine the Pokémon species for "${set.species}".`,
+        };
+      }
+
+      try {
+        const dto = await firstValueFrom(this.api.getPokemonByName(slug));
+        pokemonDtos.push(dto);
+      } catch (error) {
+        console.error('Import error: unable to load Pokémon details', set.species, error);
+        return {
+          success: false,
+          error: `Unable to load data for "${this.formatSpeciesName(set.species)}".`,
+        };
+      }
+    }
+
+    const importedTeam: PokemonVM[] = [];
+
+    for (let index = 0; index < pokemonDtos.length; index += 1) {
+      const dto = pokemonDtos[index];
+      const set = limited[index];
+      let pokemon = this.mapper.normalizeVM(this.mapper.toVM(dto));
+      pokemon = this.applyImportedSet(pokemon, set);
+      importedTeam.push(pokemon);
+      this.cacheMoveDetailsFromPokemon(pokemon);
+      this.prefetchAbilityOptionsForPokemon(pokemon);
+      this.prefetchMoveDetailsForPokemon(pokemon);
+    }
+
+    this.team.set(importedTeam);
+    this.syncDraftMembers(importedTeam);
+
+    return { success: true };
   }
 
   setTeamName(name: string) {
@@ -560,6 +646,296 @@ export class TeamFacade {
       this.syncDraftMembers(nextTeam);
       return nextTeam;
     });
+  }
+
+  private applyImportedSet(pokemon: PokemonVM, set: ParsedPokemonSet): PokemonVM {
+    const level = typeof set.level === 'number' ? this.clampLevel(set.level) : pokemon.level;
+    const ability = set.ability ? this.resolveAbility(pokemon, set.ability) : pokemon.selectedAbility;
+    const nature = set.nature ? this.resolveNature(set.nature) : pokemon.selectedNature;
+    const heldItem = this.resolveItem(set.item);
+    const teraType =
+      this.normalizeTeraType(set.teraType) ?? pokemon.teraType ?? this.inferDefaultTeraType(pokemon);
+
+    const stats = pokemon.stats.map((stat) => {
+      const key = stat.name as ParsedStatKey;
+      const nextEv = set.evs[key];
+      const nextIv = set.ivs[key];
+      return {
+        ...stat,
+        ev: typeof nextEv === 'number' ? nextEv : stat.ev,
+        iv: typeof nextIv === 'number' ? nextIv : stat.iv,
+      } satisfies PokemonStatVM;
+    });
+
+    const { moves, selectedMoves } = this.buildImportedMoves(
+      { ...pokemon, moves: pokemon.moves.map((move) => ({ ...move })) },
+      set.moves
+    );
+
+    const normalized = this.mapper.normalizeVM({
+      ...pokemon,
+      level,
+      stats,
+      moves,
+      selectedMoves,
+      selectedAbility: ability ?? pokemon.selectedAbility,
+      selectedNature: nature ?? null,
+      heldItem,
+      teraType,
+    });
+
+    return this.applyNatureToPokemon(normalized);
+  }
+
+  private buildImportedMoves(
+    pokemon: PokemonVM,
+    moveNames: string[]
+  ): { moves: PokemonMoveOptionVM[]; selectedMoves: (PokemonMoveDetailVM | null)[] } {
+    let moves = Array.isArray(pokemon.moves) ? pokemon.moves.map((move) => ({ ...move })) : [];
+    const selected: (PokemonMoveDetailVM | null)[] = Array.from({ length: 4 }, () => null);
+    const limited = Array.isArray(moveNames) ? moveNames.slice(0, 4) : [];
+
+    limited.forEach((moveName, index) => {
+      const slug = this.slugifyIdentifier(moveName);
+      if (!slug) {
+        return;
+      }
+
+      const matchIndex = moves.findIndex(
+        (move) =>
+          this.slugifyIdentifier(move.name) === slug ||
+          this.slugifyIdentifier(move.label ?? move.name) === slug
+      );
+
+      let option: PokemonMoveOptionVM;
+      if (matchIndex >= 0) {
+        option = { ...moves[matchIndex] };
+        moves[matchIndex] = option;
+      } else {
+        option = {
+          name: slug,
+          label: this.formatMoveLabel(moveName),
+          url: this.buildResourceUrl('move', slug),
+          type: null,
+          power: null,
+          accuracy: null,
+          damageClass: null,
+          effect: null,
+        };
+        moves = [...moves, option];
+      }
+
+      const detail = this.mapper.normalizeMoveDetail({
+        name: option.label ?? this.formatMoveLabel(moveName),
+        url: option.url,
+        type: option.type,
+        power: option.power,
+        accuracy: option.accuracy,
+        damageClass: option.damageClass,
+        effect: option.effect,
+      });
+
+      selected[index] = detail;
+    });
+
+    return { moves, selectedMoves: selected };
+  }
+
+  private resolveAbility(pokemon: PokemonVM, abilityName: string): PokemonAbilityOptionVM | null {
+    const slug = this.slugifyIdentifier(abilityName);
+    if (!slug) {
+      return pokemon.selectedAbility ?? pokemon.abilityOptions[0] ?? null;
+    }
+
+    const match =
+      pokemon.abilityOptions.find(
+        (ability) =>
+          this.slugifyIdentifier(ability.name) === slug ||
+          this.slugifyIdentifier(ability.label) === slug
+      ) ?? null;
+
+    if (match) {
+      return match;
+    }
+
+    return this.mapper.abilityOptionFromUrl(this.buildResourceUrl('ability', slug));
+  }
+
+  private resolveItem(name: string | null): PokemonItemOptionVM | null {
+    if (name === null) {
+      return null;
+    }
+
+    const normalized = name.trim();
+    if (!normalized || /^none$/i.test(normalized)) {
+      return null;
+    }
+
+    const slug = this.slugifyIdentifier(normalized);
+    if (!slug) {
+      return null;
+    }
+
+    const items = this.itemOptions();
+    const match =
+      items.find(
+        (item) =>
+          this.slugifyIdentifier(item.name) === slug ||
+          this.slugifyIdentifier(item.label ?? item.name) === slug
+      ) ?? null;
+
+    if (match) {
+      return match;
+    }
+
+    return this.mapper.itemOptionFromUrl(this.buildResourceUrl('item', slug));
+  }
+
+  private resolveNature(name: string | null): PokemonNatureOptionVM | null {
+    if (name === null) {
+      return null;
+    }
+
+    const slug = this.slugifyIdentifier(name);
+    if (!slug) {
+      return null;
+    }
+
+    const options = this.natureOptions();
+    const match =
+      options.find(
+        (nature) =>
+          this.slugifyIdentifier(nature.name) === slug ||
+          this.slugifyIdentifier(nature.label) === slug
+      ) ?? null;
+
+    if (match) {
+      return match;
+    }
+
+    return this.mapper.natureOptionFromUrl(this.buildResourceUrl('nature', slug));
+  }
+
+  private normalizeTeraType(value: string | null): string | null {
+    const formatted = this.formatTitle(value);
+    return formatted || null;
+  }
+
+  private inferDefaultTeraType(pokemon: PokemonVM): string | null {
+    const type = pokemon.typeDetails?.[0]?.name ?? pokemon.types?.[0] ?? null;
+    return type ? this.formatTitle(type) : null;
+  }
+
+  private formatPokemonForExport(pokemon: PokemonVM): string {
+    const lines: string[] = [];
+    const displayName = this.formatSpeciesName(pokemon.name);
+    const item = pokemon.heldItem?.label ?? null;
+
+    lines.push(item ? `${displayName} @ ${item}` : displayName);
+
+    if (pokemon.selectedAbility?.label) {
+      lines.push(`Ability: ${pokemon.selectedAbility.label}`);
+    }
+
+    lines.push(`Level: ${this.clampLevel(pokemon.level)}`);
+
+    const teraType = pokemon.teraType?.trim()
+      ? this.formatTitle(pokemon.teraType)
+      : this.inferDefaultTeraType(pokemon);
+    if (teraType) {
+      lines.push(`Tera Type: ${teraType}`);
+    }
+
+    const evLine = this.formatEvLine(pokemon.stats);
+    if (evLine) {
+      lines.push(evLine);
+    }
+
+    const ivLine = this.formatIvLine(pokemon.stats);
+    if (ivLine) {
+      lines.push(ivLine);
+    }
+
+    const natureLabel = pokemon.selectedNature?.label ?? 'Serious';
+    lines.push(`${natureLabel} Nature`);
+
+    pokemon.selectedMoves
+      ?.filter((move): move is PokemonMoveDetailVM => !!move)
+      .forEach((move) => {
+        lines.push(`- ${move.name}`);
+      });
+
+    return lines.join('\n');
+  }
+
+  private formatEvLine(stats: PokemonStatVM[]): string | null {
+    const parts = stats
+      .filter((stat) => stat.ev > 0)
+      .map((stat) => `${stat.ev} ${this.getStatAbbreviation(stat.name)}`);
+    return parts.length ? `EVs: ${parts.join(' / ')}` : null;
+  }
+
+  private formatIvLine(stats: PokemonStatVM[]): string | null {
+    const parts = stats
+      .filter((stat) => stat.iv !== STAT_IV_MAX)
+      .map((stat) => `${stat.iv} ${this.getStatAbbreviation(stat.name)}`);
+    return parts.length ? `IVs: ${parts.join(' / ')}` : null;
+  }
+
+  private getStatAbbreviation(name: string): string {
+    const key = name.toLowerCase() as ParsedStatKey;
+    return STAT_ABBREVIATIONS[key] ?? this.formatTitle(name);
+  }
+
+  private formatSpeciesName(value: string): string {
+    return this.formatTitle(value);
+  }
+
+  private formatMoveLabel(value: string): string {
+    return this.formatTitle(value);
+  }
+
+  private formatTitle(value: string | null | undefined): string {
+    const normalized = (value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_]+/g, ' ')
+      .trim();
+
+    if (!normalized) {
+      return '';
+    }
+
+    return normalized
+      .split(/\s+/)
+      .map((word) =>
+        word
+          .split('-')
+          .map((segment) => (segment ? segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase() : segment))
+          .join('-')
+      )
+      .join(' ');
+  }
+
+  private slugifyIdentifier(value: string | null | undefined): string | null {
+    const normalized = (value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s\-']/g, '')
+      .replace(/[']/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    return normalized || null;
+  }
+
+  private buildResourceUrl(
+    resource: 'ability' | 'item' | 'move' | 'nature' | 'pokemon',
+    slug: string
+  ): string {
+    return `https://pokeapi.co/api/v2/${resource}/${slug}/`;
   }
 
   private recalculatePokemonStats(pokemon: PokemonVM): PokemonVM {

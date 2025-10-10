@@ -129,6 +129,7 @@ export class PokemonComponent {
         ? value.selectedMoves
         : [null, null, null, null],
       level,
+      teraType: value.teraType ?? null,
       selectedNature: value.selectedNature ? { ...value.selectedNature } : null,
     };
     this.pendingSelection = this._pokemon.selectedMoves.map((move) => (move ? { ...move } : null));

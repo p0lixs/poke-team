@@ -59,6 +59,7 @@ export class PokemonMapper {
         })) ?? []
       ),
       level: 50,
+      teraType: null,
       abilityOptions,
       selectedAbility: defaultAbility,
       heldItem: null,
@@ -99,6 +100,7 @@ export class PokemonMapper {
         : [],
       stats,
       level,
+      teraType: value.teraType?.trim() || null,
       abilityOptions,
       selectedAbility,
       heldItem,
