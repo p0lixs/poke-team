@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ItemClient, MoveClient, PokemonClient } from 'pokenode-ts';
 import { Observable, forkJoin, from, map, of, switchMap, throwError } from 'rxjs';
-import { MoveDTO, PokemonDTO, NamedAPIResource, NatureDTO } from '../models/pokeapi.dto';
+import { MoveDTO, NamedAPIResource, NatureDTO, PokemonDTO } from '../models/pokeapi.dto';
 
 @Injectable({ providedIn: 'root' })
 export class PokemonApi {
@@ -32,9 +32,7 @@ export class PokemonApi {
   }
 
   getAllItems(): Observable<NamedAPIResource[]> {
-    return from(this.itemClient.listItems(0, 1000)).pipe(
-      map((response) => response.results ?? [])
-    );
+    return from(this.itemClient.listItems(0, 2000)).pipe(map((response) => response.results ?? []));
   }
 
   getAllNatures(): Observable<(NatureDTO & { url: string })[]> {
