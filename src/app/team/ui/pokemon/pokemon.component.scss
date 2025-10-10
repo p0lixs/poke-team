@@ -40,6 +40,7 @@
   grid-template-areas:
     'level ability'
     'nature nature'
+    'tera tera'
     'item item';
 
   &__field {
@@ -78,18 +79,11 @@
     }
   }
 }
-.loadout__field:nth-child(1) {
-  grid-area: level;
-}
-.loadout__field:nth-child(2) {
-  grid-area: nature;
-}
-.loadout__field:nth-child(3) {
-  grid-area: ability;
-}
-.loadout__field:nth-child(4) {
-  grid-area: item;
-}
+.loadout__field--level { grid-area: level; }
+.loadout__field--nature { grid-area: nature; }
+.loadout__field--ability { grid-area: ability; }
+.loadout__field--item { grid-area: item; }
+.loadout__field--tera { grid-area: tera; }
 .item-dropdown {
   position: relative;
 

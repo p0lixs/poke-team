@@ -19,13 +19,13 @@
   </header>
 
   <section class="loadout">
-    <label class="loadout__field">
+    <label class="loadout__field loadout__field--level">
       <span class="loadout__label">Level</span>
       <input type="number" class="loadout__input" min="1" max="100" step="1" [ngModel]="levelValue"
         (ngModelChange)="handleLevelChange($event)" />
     </label>
 
-    <label class="loadout__field">
+    <label class="loadout__field loadout__field--nature">
       <span class="loadout__label">Nature</span>
       <select class="loadout__select" [ngModel]="selectedNatureUrl" (ngModelChange)="handleNatureChange($event)"
         [disabled]="!natures.length">
@@ -40,7 +40,64 @@
       </select>
     </label>
 
-    <label class="loadout__field">
+    <label class="loadout__field loadout__field--tera">
+      <span class="loadout__label">Tera Type</span>
+      <div class="item-dropdown" [class.is-open]="isTeraDropdownOpen">
+        <button type="button" class="item-dropdown__trigger" (click)="toggleTeraDropdown($event)"
+          aria-haspopup="listbox" [attr.aria-expanded]="isTeraDropdownOpen">
+          @if (selectedTeraOption) {
+          <span class="item-dropdown__option">
+            @let iconUrl = (typeIcons.getIconByTypeUrl(selectedTeraOption.url) | async);
+            @if (iconUrl) {
+            <img class="item-dropdown__icon" [src]="iconUrl" [alt]="selectedTeraOption.name"
+              referrerpolicy="no-referrer" loading="lazy" />
+            } @else {
+            <span class="item-dropdown__icon item-dropdown__icon--placeholder" aria-hidden="true">T</span>
+            }
+            <span class="item-dropdown__label">{{ selectedTeraOption.label }}</span>
+          </span>
+          } @else {
+          <span class="item-dropdown__placeholder">Select type</span>
+          }
+        </button>
+
+        @if (isTeraDropdownOpen) {
+        <div class="item-dropdown__menu" role="listbox">
+          <div class="item-dropdown__search">
+            <label class="item-dropdown__search-label" [attr.for]="'tera-search-' + pokemon.id">Search</label>
+            <input type="search" class="item-dropdown__search-input" [id]="'tera-search-' + pokemon.id"
+              name="tera-search" autocomplete="off" [(ngModel)]="teraSearchTerm"
+              (ngModelChange)="onTeraSearchTermChange()" placeholder="Search type" />
+          </div>
+
+          @if (filteredTeraTypes.length) {
+          <div class="item-dropdown__list">
+            @for (t of filteredTeraTypes; track t.name) {
+            <button type="button" class="item-dropdown__menu-item" (click)="selectTeraType(t.name, $event)"
+              [class.is-active]="selectedTeraOption?.name === t.name" role="option"
+              [attr.aria-selected]="selectedTeraOption?.name === t.name">
+              <span class="item-dropdown__option">
+                @let iconUrl = (typeIcons.getIconByTypeUrl(t.url) | async);
+                @if (iconUrl) {
+                <img class="item-dropdown__icon" [src]="iconUrl" [alt]="t.name" referrerpolicy="no-referrer"
+                  loading="lazy" />
+                } @else {
+                <span class="item-dropdown__icon item-dropdown__icon--placeholder" aria-hidden="true">T</span>
+                }
+                <span class="item-dropdown__label">{{ t.label }}</span>
+              </span>
+            </button>
+            }
+          </div>
+          } @else {
+          <div class="item-dropdown__empty">No results</div>
+          }
+        </div>
+        }
+      </div>
+    </label>
+
+    <label class="loadout__field loadout__field--ability">
       <span class="loadout__label">Ability</span>
       <select class="loadout__select" [ngModel]="selectedAbilityUrl" (ngModelChange)="handleAbilityChange($event)"
         [disabled]="!pokemon.abilityOptions.length">
@@ -54,7 +111,7 @@
       </select>
     </label>
 
-    <label class="loadout__field">
+    <label class="loadout__field loadout__field--item">
       <span class="loadout__label">Held item</span>
       <div class="item-dropdown" [class.is-open]="isItemDropdownOpen">
         <button type="button" class="item-dropdown__trigger" (click)="toggleItemDropdown($event)"

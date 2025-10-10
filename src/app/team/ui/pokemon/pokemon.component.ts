@@ -39,6 +39,7 @@ import {
   PokemonStatAllocationPayload,
   PokemonStatVM,
   PokemonVM,
+  PokemonTeraTypeSelectionPayload,
 } from '../../models/view.model';
 
 type MoveTableRow = {
@@ -72,12 +73,16 @@ export class PokemonComponent {
   isMoveModalOpen = false;
   moveSearchTerm = '';
   itemSearchTerm = '';
+  teraSearchTerm = '';
   moveTableRows: MoveTableRow[] = [];
   filteredMoveRows: MoveTableRow[] = [];
   pendingSelection: (PokemonMoveDetailVM | null)[] = [null, null, null, null];
   selectedAbilityUrl = '';
   selectedItemUrl = '';
   selectedNatureUrl = '';
+  isTeraDropdownOpen = false;
+  filteredTeraTypes: { name: string; label: string; url: string }[] = [];
+  selectedTeraName: string | null = null;
   levelValue = 50;
   isItemDropdownOpen = false;
   filteredItems: PokemonItemOptionVM[] = [];
@@ -91,7 +96,7 @@ export class PokemonComponent {
   private _items: PokemonItemOptionVM[] = [];
   private _natures: PokemonNatureOptionVM[] = [];
 
-  private readonly typeIcons = inject(TypeIconService);
+  readonly typeIcons = inject(TypeIconService);
   private readonly api = inject(PokemonApi);
   private readonly mapper = inject(PokemonMapper);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -137,6 +142,7 @@ export class PokemonComponent {
     this.selectedItemUrl = this._pokemon.heldItem?.url ?? '';
     this.levelValue = level;
     this.selectedNatureUrl = this._pokemon.selectedNature?.url ?? '';
+    this.selectedTeraName = this._pokemon.teraType || this.inferDefaultTeraType(this._pokemon);
     this.initializeMoveDetailCache();
     this.prepareMoveIcons();
     this.ensureAllMoveDetailsLoaded().subscribe(() => {
@@ -144,6 +150,7 @@ export class PokemonComponent {
         this.initializeMoveTableRows();
       }
     });
+    this.refreshFilteredTeraTypes();
   }
   get pokemon(): PokemonVM {
     return this._pokemon;
@@ -170,6 +177,7 @@ export class PokemonComponent {
   @Output() natureChange = new EventEmitter<PokemonNatureSelectionPayload>();
   @Output() levelChange = new EventEmitter<PokemonLevelChangePayload>();
   @Output() statChange = new EventEmitter<PokemonStatAllocationPayload>();
+  @Output() teraTypeChange = new EventEmitter<PokemonTeraTypeSelectionPayload>();
 
   onRemove() {
     this.remove.emit(this.pokemon.id);
@@ -348,30 +356,105 @@ export class PokemonComponent {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
-    if (!this.isItemDropdownOpen) {
-      return;
-    }
-
     const target = event.target as Node | null;
     if (!target) {
-      this.isItemDropdownOpen = false;
+      if (this.isItemDropdownOpen) this.isItemDropdownOpen = false;
+      if (this.isTeraDropdownOpen) this.isTeraDropdownOpen = false;
       return;
     }
 
     if (!this.host.nativeElement.contains(target)) {
-      this.isItemDropdownOpen = false;
+      if (this.isItemDropdownOpen) this.isItemDropdownOpen = false;
+      if (this.isTeraDropdownOpen) this.isTeraDropdownOpen = false;
     }
   }
 
   @HostListener('document:keydown.escape')
   onEscape() {
-    if (this.isItemDropdownOpen) {
-      this.isItemDropdownOpen = false;
-    }
+    if (this.isItemDropdownOpen) this.isItemDropdownOpen = false;
+    if (this.isTeraDropdownOpen) this.isTeraDropdownOpen = false;
   }
 
   get pendingSelectionCount(): number {
     return this.pendingSelection.filter((move) => !!move).length;
+  }
+
+  // --- Tera Type dropdown ---
+  private getAllTypes(): { name: string; label: string; url: string }[] {
+    const names = [
+      'normal',
+      'fire',
+      'water',
+      'electric',
+      'grass',
+      'ice',
+      'fighting',
+      'poison',
+      'ground',
+      'flying',
+      'psychic',
+      'bug',
+      'rock',
+      'ghost',
+      'dragon',
+      'dark',
+      'steel',
+      'fairy',
+    ];
+    return names.map((name) => ({
+      name,
+      label: this.toTitleCase(name),
+      url: `https://pokeapi.co/api/v2/type/${name}`,
+    }));
+  }
+
+  private inferDefaultTeraType(p: PokemonVM): string | null {
+    const type = p.typeDetails?.[0]?.name ?? p.types?.[0] ?? null;
+    return type ? this.toTitleCase(type) : null;
+  }
+
+  get selectedTeraOption(): { name: string; label: string; url: string } | null {
+    const nameLc = (this.selectedTeraName || '').toLowerCase();
+    const all = this.getAllTypes();
+    return all.find((t) => t.name === nameLc || t.label.toLowerCase() === nameLc) ?? null;
+  }
+
+  toggleTeraDropdown(event?: MouseEvent) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const willOpen = !this.isTeraDropdownOpen;
+    this.isTeraDropdownOpen = willOpen;
+
+    if (willOpen) {
+      this.teraSearchTerm = '';
+      this.refreshFilteredTeraTypes();
+    }
+  }
+
+  selectTeraType(name: string, event?: MouseEvent) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const formatted = this.toTitleCase(name);
+    this.selectedTeraName = formatted;
+    this.isTeraDropdownOpen = false;
+    this.teraTypeChange.emit({ pokemonId: this.pokemon.id, teraType: formatted });
+  }
+
+  onTeraSearchTermChange() {
+    this.refreshFilteredTeraTypes();
+  }
+
+  private refreshFilteredTeraTypes() {
+    const term = this.teraSearchTerm.trim().toLowerCase();
+    const all = this.getAllTypes();
+    if (!term) {
+      this.filteredTeraTypes = all;
+      return;
+    }
+
+    this.filteredTeraTypes = all.filter((t) =>
+      t.name.includes(term) || t.label.toLowerCase().includes(term)
+    );
   }
 
   isMoveSelected(url: string): boolean {

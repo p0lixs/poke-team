@@ -10,6 +10,7 @@ import {
   PokemonLevelChangePayload,
   PokemonStatAllocationPayload,
   PokemonVM,
+  PokemonTeraTypeSelectionPayload,
 } from '../../models/view.model';
 import { SavedTeam } from '../../models/team.model';
 import { PokemonComponent } from '../pokemon/pokemon.component';
@@ -40,6 +41,7 @@ export class TeamPanelComponent {
   @Output() natureChange = new EventEmitter<PokemonNatureSelectionPayload>();
   @Output() levelChange = new EventEmitter<PokemonLevelChangePayload>();
   @Output() statChange = new EventEmitter<PokemonStatAllocationPayload>();
+  @Output() teraTypeChange = new EventEmitter<PokemonTeraTypeSelectionPayload>();
   @Output() renameTeam = new EventEmitter<{ id: string; name: string }>();
   @Output() openImport = new EventEmitter<void>();
   @Output() openExport = new EventEmitter<void>();

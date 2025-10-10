@@ -15,6 +15,7 @@ import {
   PokemonStatAllocationPayload,
   PokemonStatVM,
   PokemonVM,
+  PokemonTeraTypeSelectionPayload,
 } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
@@ -614,6 +615,27 @@ export class TeamFacade {
       }
 
       nextTeam[index] = updated;
+      this.syncDraftMembers(nextTeam);
+      return nextTeam;
+    });
+  }
+
+  changePokemonTeraType(change: PokemonTeraTypeSelectionPayload) {
+    const nextType = this.normalizeTeraType(change.teraType);
+    this.team.update((current) => {
+      const index = current.findIndex((pokemon) => pokemon.id === change.pokemonId);
+      if (index === -1) {
+        return current;
+      }
+
+      const nextTeam = [...current];
+      const pokemon = this.mapper.normalizeVM(nextTeam[index]);
+      if (pokemon.teraType === nextType) {
+        return current;
+      }
+
+      pokemon.teraType = nextType;
+      nextTeam[index] = pokemon;
       this.syncDraftMembers(nextTeam);
       return nextTeam;
     });

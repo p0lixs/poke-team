@@ -24,6 +24,11 @@ export interface PokemonVM {
   selectedMoves: (PokemonMoveDetailVM | null)[];
 }
 
+export interface PokemonTeraTypeSelectionPayload {
+  pokemonId: number;
+  teraType: string | null;
+}
+
 export interface PokemonNatureOptionVM {
   name: string;
   label: string;
