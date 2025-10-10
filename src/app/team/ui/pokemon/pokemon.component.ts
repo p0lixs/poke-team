@@ -4,13 +4,13 @@ import {
   ElementRef,
   EventEmitter,
   HostListener,
+  inject,
   Input,
   Output,
   ViewChild,
-  inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of, Subscription, Observable } from 'rxjs';
+import { forkJoin, Observable, of, Subscription } from 'rxjs';
 import { catchError, finalize, map, take, tap } from 'rxjs/operators';
 
 import { TypeIcon } from '../../../shared/ui/type-icon/type-icon';
@@ -30,14 +30,14 @@ import {
   PokemonAbilitySelectionPayload,
   PokemonItemOptionVM,
   PokemonItemSelectionPayload,
+  PokemonLevelChangePayload,
   PokemonMoveDetailVM,
   PokemonMoveOptionVM,
   PokemonMoveSelectionPayload,
-  PokemonStatVM,
   PokemonNatureOptionVM,
   PokemonNatureSelectionPayload,
-  PokemonLevelChangePayload,
   PokemonStatAllocationPayload,
+  PokemonStatVM,
   PokemonVM,
 } from '../../models/view.model';
 
@@ -68,7 +68,7 @@ export class PokemonComponent {
   private moveDetailCache: Record<string, PokemonMoveDetailVM> = {};
   private pendingDetailRequests = new Set<string>();
   private moveModalPreparationSub: Subscription | null = null;
-
+  private hasFocusedMoveSearch = false;
   isMoveModalOpen = false;
   moveSearchTerm = '';
   itemSearchTerm = '';
@@ -97,12 +97,26 @@ export class PokemonComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private moveSearchInputRef: ElementRef<HTMLInputElement> | null = null;
 
+  // 3) en el setter del @ViewChild, no fuerces el focus si ya se hizo
   @ViewChild('moveSearchInput')
   set moveSearchInput(ref: ElementRef<HTMLInputElement> | undefined) {
     this.moveSearchInputRef = ref ?? null;
-    if (this.isMoveModalOpen && ref) {
+    if (this.isMoveModalOpen && ref && !this.hasFocusedMoveSearch) {
       this.focusMoveSearchInput();
     }
+  }
+
+  // 4) protege focusMoveSearchInput() para ejecutarse solo una vez
+  private focusMoveSearchInput() {
+    setTimeout(() => {
+      if (!this.isMoveModalOpen || this.hasFocusedMoveSearch) return;
+
+      const element = this.moveSearchInputRef?.nativeElement;
+      if (element) {
+        element.focus({ preventScroll: true }); // sin select(), no “molesta” al escribir
+        this.hasFocusedMoveSearch = true; // <<--- marca que ya enfocamos
+      }
+    });
   }
 
   @Input() set pokemon(value: PokemonVM) {
@@ -160,19 +174,22 @@ export class PokemonComponent {
     this.remove.emit(this.pokemon.id);
   }
 
+  // 2) en openMoveModal(), reinicia el flag y enfoca una vez
   openMoveModal() {
     if (this.moveModalPreparationSub) {
       this.moveModalPreparationSub.unsubscribe();
       this.moveModalPreparationSub = null;
     }
 
-    this.pendingSelection = this.pokemon.selectedMoves.map((move) => (move ? { ...move } : null));
+    this.pendingSelection = this.pokemon.selectedMoves.map((m) => (m ? { ...m } : null));
     this.moveSearchTerm = '';
+    this.hasFocusedMoveSearch = false; // <<--- importante
+
     this.moveModalPreparationSub = this.ensureAllMoveDetailsLoaded().subscribe({
       next: () => {
         this.isMoveModalOpen = true;
         this.initializeMoveTableRows();
-        this.focusMoveSearchInput();
+        this.focusMoveSearchInput(); // <<--- enfocamos aquí una única vez
       },
       complete: () => {
         this.moveModalPreparationSub = null;
@@ -192,20 +209,6 @@ export class PokemonComponent {
 
   onSearchTermChange() {
     this.refreshFilteredMoveRows();
-  }
-
-  private focusMoveSearchInput() {
-    setTimeout(() => {
-      if (!this.isMoveModalOpen) {
-        return;
-      }
-
-      const element = this.moveSearchInputRef?.nativeElement;
-      if (element) {
-        element.focus();
-        element.select();
-      }
-    });
   }
 
   toggleMoveSelection(row: MoveTableRow) {
@@ -660,10 +663,7 @@ export class PokemonComponent {
     });
   }
 
-  private rowNeedsDetailUpdate(
-    row: MoveTableRow,
-    detail: PokemonMoveDetailVM
-  ): boolean {
+  private rowNeedsDetailUpdate(row: MoveTableRow, detail: PokemonMoveDetailVM): boolean {
     if (row.loading) {
       return true;
     }
@@ -734,26 +734,24 @@ export class PokemonComponent {
 
     return forkJoin(
       missingUrls.map((url) =>
-        this.api
-          .getMoveByUrl(url)
-          .pipe(
-            take(1),
-            map((dto) => this.mapper.moveDetailFromDto(dto, url)),
-            tap((detail) => {
-              this.moveDetailCache[url] = detail;
-              this.updateMoveOptionWithDetail(detail);
-              this.ensureMoveIcon(detail.type?.url ?? null, detail.url);
-              if (this.isMoveModalOpen) {
-                this.applyDetailToRow(detail);
-              }
-            }),
-            catchError((error) => {
-              console.error('Error loading move details', error);
-              const placeholder = this.mapper.createMovePlaceholder(undefined, url);
-              this.moveDetailCache[url] = placeholder;
-              return of(placeholder);
-            })
-          )
+        this.api.getMoveByUrl(url).pipe(
+          take(1),
+          map((dto) => this.mapper.moveDetailFromDto(dto, url)),
+          tap((detail) => {
+            this.moveDetailCache[url] = detail;
+            this.updateMoveOptionWithDetail(detail);
+            this.ensureMoveIcon(detail.type?.url ?? null, detail.url);
+            if (this.isMoveModalOpen) {
+              this.applyDetailToRow(detail);
+            }
+          }),
+          catchError((error) => {
+            console.error('Error loading move details', error);
+            const placeholder = this.mapper.createMovePlaceholder(undefined, url);
+            this.moveDetailCache[url] = placeholder;
+            return of(placeholder);
+          })
+        )
       )
     ).pipe(
       tap(() => this.prepareMoveIcons()),
@@ -814,9 +812,7 @@ export class PokemonComponent {
     damageClass: string | null,
     effect: string | null
   ): string {
-    return [label ?? '', damageClass ?? '', effect ?? '']
-      .join(' ')
-      .toLowerCase();
+    return [label ?? '', damageClass ?? '', effect ?? ''].join(' ').toLowerCase();
   }
 
   private removeMoveFromPending(url: string) {
@@ -835,16 +831,15 @@ export class PokemonComponent {
     }
 
     this.ensureMoveDetail(row);
-    const normalized =
-      this.mapper.normalizeMoveDetail({
-        name: row.label,
-        url: row.url,
-        type: row.type,
-        power: row.power,
-        accuracy: row.accuracy,
-        damageClass: row.damageClass,
-        effect: row.effect,
-      });
+    const normalized = this.mapper.normalizeMoveDetail({
+      name: row.label,
+      url: row.url,
+      type: row.type,
+      power: row.power,
+      accuracy: row.accuracy,
+      damageClass: row.damageClass,
+      effect: row.effect,
+    });
 
     if (normalized) {
       this.moveDetailCache[row.url] = normalized;

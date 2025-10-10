@@ -199,8 +199,11 @@ h3,
 
   &__table-scroll {
     max-height: min(26rem, 60vh);
+    min-height: min(26rem, 60vh);
     overflow-y: auto;
     overflow-x: auto;
+    /* opcional: para evitar que el sticky herede fondos raros */
+    background: #fff;
   }
 
   &__table {
@@ -211,7 +214,22 @@ h3,
     thead {
       background: #f1f5f9;
     }
-
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2; /* por encima del tbody */
+      background: #f1f5f9; /* asegura fondo al hacer scroll */
+    }
+    /* opcional: evita “jumps” visuales en el borde bajo del thead */
+    thead th::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background: #e2e8f0;
+    }
     th,
     td {
       padding: 0.6rem 0.75rem;
