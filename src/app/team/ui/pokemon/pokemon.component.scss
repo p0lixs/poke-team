@@ -34,6 +34,7 @@
 }
 
 .type-group {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -41,6 +42,7 @@
 }
 
 .type-group__tera {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -101,17 +103,25 @@
     }
   }
 }
-.loadout__field--level { grid-area: level; }
-.loadout__field--nature { grid-area: nature; }
-.loadout__field--ability { grid-area: ability; }
-.loadout__field--item { grid-area: item; }
+.loadout__field--level {
+  grid-area: level;
+}
+.loadout__field--nature {
+  grid-area: nature;
+}
+.loadout__field--ability {
+  grid-area: ability;
+}
+.loadout__field--item {
+  grid-area: item;
+}
 
 .item-dropdown--inline {
-  min-width: 0;
+  min-width: 75%;
 }
 
 .item-dropdown--inline .item-dropdown__trigger {
-  width: auto;
+  width: 100%;
   min-width: 0;
   padding: 0.3rem 0.6rem;
 }
