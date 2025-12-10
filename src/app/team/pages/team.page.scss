@@ -35,6 +35,10 @@
   overflow: hidden;
 }
 
+.modal--wide {
+  width: min(1100px, calc(100vw - 2rem));
+}
+
 .modal__header {
   display: flex;
   align-items: center;
@@ -157,4 +161,104 @@
       background: #1d4ed8;
     }
   }
+}
+
+.weakness-table-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: auto;
+}
+
+.weakness-table {
+  min-width: 720px;
+}
+
+.weakness-row {
+  display: grid;
+  grid-template-columns: 180px repeat(18, minmax(60px, 1fr));
+  align-items: stretch;
+}
+
+.weakness-row--header {
+  position: sticky;
+  top: 0;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 1;
+}
+
+.weakness-cell {
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  padding: 0.55rem 0.35rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.weakness-cell__pokemon {
+  text-align: left;
+  background: #fff;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.weakness-cell__type {
+  border-bottom-color: #d1d5db;
+}
+
+.weakness-row:last-child .weakness-cell {
+  border-bottom: 0;
+}
+
+.weakness-row--header .weakness-cell__pokemon {
+  background: #f9fafb;
+}
+
+.pokemon-name {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.pokemon-types {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.tera-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #312e81;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.weakness-cell.is-immune {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.weakness-cell.is-resist {
+  background: #ecfeff;
+  color: #0f766e;
+}
+
+.weakness-cell.is-neutral {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.weakness-cell.is-weak {
+  background: #fef3c7;
+  color: #92400e;
 }

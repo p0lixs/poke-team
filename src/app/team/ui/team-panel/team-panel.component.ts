@@ -45,6 +45,7 @@ export class TeamPanelComponent {
   @Output() renameTeam = new EventEmitter<{ id: string; name: string }>();
   @Output() openImport = new EventEmitter<void>();
   @Output() openExport = new EventEmitter<void>();
+  @Output() openWeaknesses = new EventEmitter<void>();
 
   // UI state
   editMode: EditMode = 'none';
