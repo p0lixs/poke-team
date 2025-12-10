@@ -185,6 +185,14 @@ export class TeamPage {
     return Math.abs(value - target) < 0.01;
   }
 
+  isQuarterResistance(multiplier: number): boolean {
+    return this.isClose(multiplier, 0.25);
+  }
+
+  isQuadWeakness(multiplier: number): boolean {
+    return this.isClose(multiplier, 4);
+  }
+
   private isStrongWeakness(multiplier: number): boolean {
     return this.isClose(multiplier, 2) || this.isClose(multiplier, 4);
   }

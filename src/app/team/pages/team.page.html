@@ -122,7 +122,9 @@
                             <div class="weakness-cell" role="cell" [attr.aria-label]="cell.type + ' damage'"
                                 [class.is-immune]="cell.multiplier === 0"
                                 [class.is-resist]="cell.multiplier > 0 && cell.multiplier < 1"
-                                [class.is-neutral]="cell.multiplier === 1" [class.is-weak]="cell.multiplier > 1">
+                                [class.is-quarter-resist]="isQuarterResistance(cell.multiplier)"
+                                [class.is-neutral]="cell.multiplier === 1" [class.is-weak]="cell.multiplier > 1"
+                                [class.is-quad-weak]="isQuadWeakness(cell.multiplier)">
                                 {{ cell.label }}
                             </div>
                             }
