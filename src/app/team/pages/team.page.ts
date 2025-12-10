@@ -1,12 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TypeIcon } from '../../shared/ui/type-icon/type-icon';
 import { TeamFacade } from '../data/team.facade';
+import { TypeEffectivenessService, TypeInfo } from '../data/type-effectiveness.service';
+import { PokemonVM } from '../models/view.model';
 import { ResultsListComponent } from '../ui/results-list/results-list.component';
 import { SearchBoxComponent } from '../ui/search-box/search-box.component';
 import { TeamPanelComponent } from '../ui/team-panel/team-panel.component';
-import { TypeIcon } from '../../shared/ui/type-icon/type-icon';
-import { TypeEffectivenessService, TypeInfo } from '../data/type-effectiveness.service';
-import { PokemonVM } from '../models/view.model';
 
 @Component({
   standalone: true,
@@ -132,10 +132,14 @@ export class TeamPage {
     const rows = team.map((pokemon) => {
       const defenses = this.normalizeTypes(pokemon);
       const teraType = pokemon.teraType?.toLowerCase().trim() || null;
-      const useTera = !!teraType && activeTera.has(pokemon.id);
+      const useTera = !!teraType && activeTera.has(pokemon.id.toString());
       const appliedTeraType = useTera ? teraType : null;
       const cells = types.map((type) => {
-        const multiplier = this.typeEffectiveness.getMultiplier(type.name, defenses, appliedTeraType);
+        const multiplier = this.typeEffectiveness.getMultiplier(
+          type.name,
+          defenses,
+          appliedTeraType
+        );
         return { type: type.name, multiplier, label: this.formatMultiplier(multiplier) };
       });
 

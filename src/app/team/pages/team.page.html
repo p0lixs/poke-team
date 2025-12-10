@@ -17,47 +17,38 @@
         }
     </section>
     <aside>
-        <app-team-panel
-            [team]="facade.team()"
-            [teamName]="facade.teamName()"
-            [savedTeams]="facade.savedTeams()"
-            [selectedTeamId]="facade.selectedTeamId()"
-            [items]="facade.itemOptions()"
-            [natures]="facade.natureOptions()"
-            (teamNameChange)="facade.setTeamName($event)"
-            (selectTeam)="facade.selectTeam($event)"
-            (createTeam)="facade.createCurrentTeam()"
-            (remove)="facade.removeFromTeam($event)"
-            (clear)="facade.clearTeam()"
-            (moveChange)="facade.changePokemonMove($event)"
-            (abilityChange)="facade.changePokemonAbility($event)"
-            (itemChange)="facade.changePokemonItem($event)"
-            (natureChange)="facade.changePokemonNature($event)"
-            (levelChange)="facade.changePokemonLevel($event)"
-            (statChange)="facade.changePokemonStats($event)"
-            (teraTypeChange)="facade.changePokemonTeraType($event)"
-            (openImport)="openImportDialog()"
-            (openExport)="openExportDialog()"
-            (openWeaknesses)="openWeaknessDialog()"
-        />
+        <app-team-panel [team]="facade.team()" [teamName]="facade.teamName()" [savedTeams]="facade.savedTeams()"
+            [selectedTeamId]="facade.selectedTeamId()" [items]="facade.itemOptions()" [natures]="facade.natureOptions()"
+            (teamNameChange)="facade.setTeamName($event)" (selectTeam)="facade.selectTeam($event)"
+            (createTeam)="facade.createCurrentTeam()" (remove)="facade.removeFromTeam($event)"
+            (clear)="facade.clearTeam()" (moveChange)="facade.changePokemonMove($event)"
+            (abilityChange)="facade.changePokemonAbility($event)" (itemChange)="facade.changePokemonItem($event)"
+            (natureChange)="facade.changePokemonNature($event)" (levelChange)="facade.changePokemonLevel($event)"
+            (statChange)="facade.changePokemonStats($event)" (teraTypeChange)="facade.changePokemonTeraType($event)"
+            (openImport)="openImportDialog()" (openExport)="openExportDialog()"
+            (openWeaknesses)="openWeaknessDialog()" />
 
         @if (showImportModal) {
         <div class="modal-backdrop" (click)="closeImportDialog()"></div>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
             <div class="modal__header">
                 <h3 class="modal__title" id="import-title">Import team</h3>
-                <button type="button" class="modal__close" (click)="closeImportDialog()" [disabled]="isImporting">×</button>
+                <button type="button" class="modal__close" (click)="closeImportDialog()"
+                    [disabled]="isImporting">×</button>
             </div>
             <div class="modal__body">
                 <label class="modal__label" for="team-import-text">Team text</label>
-                <textarea id="team-import-text" class="modal__textarea" [(ngModel)]="importText" placeholder="Paste your team here" [disabled]="isImporting"></textarea>
+                <textarea id="team-import-text" class="modal__textarea" [(ngModel)]="importText"
+                    placeholder="Paste your team here" [disabled]="isImporting"></textarea>
                 @if (importError) {
                 <p class="modal__error">{{ importError }}</p>
                 }
             </div>
             <div class="modal__footer">
-                <button type="button" class="modal__button" (click)="closeImportDialog()" [disabled]="isImporting">Cancel</button>
-                <button type="button" class="modal__button modal__button--primary" (click)="confirmImport()" [disabled]="isImporting">Import</button>
+                <button type="button" class="modal__button" (click)="closeImportDialog()"
+                    [disabled]="isImporting">Cancel</button>
+                <button type="button" class="modal__button modal__button--primary" (click)="confirmImport()"
+                    [disabled]="isImporting">Import</button>
             </div>
         </div>
         }
@@ -84,7 +75,8 @@
             </div>
             <div class="modal__footer">
                 <button type="button" class="modal__button" (click)="closeExportDialog()">Close</button>
-                <button type="button" class="modal__button modal__button--primary" (click)="copyExportText()" [disabled]="!exportText">Copy</button>
+                <button type="button" class="modal__button modal__button--primary" (click)="copyExportText()"
+                    [disabled]="!exportText">Copy</button>
             </div>
         </div>
         }
@@ -97,14 +89,15 @@
                 <button type="button" class="modal__close" (click)="closeWeaknessDialog()">×</button>
             </div>
             <div class="modal__body">
-                <p class="modal__note">Multipliers use each Pokémon's base typing by default. Toggle a Tera type to recalculate weaknesses using that typing.</p>
+                <p class="modal__note">Multipliers use each Pokémon's base typing by default. Toggle a Tera type to
+                    recalculate weaknesses using that typing.</p>
                 <div class="weakness-table-wrapper" role="table" aria-label="Type weaknesses">
                     <div class="weakness-table" role="rowgroup">
                         <div class="weakness-row weakness-row--header" role="row">
                             <div class="weakness-cell weakness-cell__pokemon" role="columnheader">Pokémon</div>
                             @for (type of typeColumns; track type.name) {
                             <div class="weakness-cell weakness-cell__type" role="columnheader">
-                                <app-type-icon [typeDetails]="[type]" [size]="32"></app-type-icon>
+                                <app-type-icon [typeDetails]="[type]" [size]="70"></app-type-icon>
                             </div>
                             }
                         </div>
@@ -113,10 +106,11 @@
                             <div class="weakness-cell weakness-cell__pokemon" role="rowheader">
                                 <div class="pokemon-name">{{ row.pokemon.name }}</div>
                                 <div class="pokemon-types">
-                                    <app-type-icon [typeDetails]="row.pokemon.typeDetails" [size]="20"></app-type-icon>
+                                    <app-type-icon [typeDetails]="row.pokemon.typeDetails" [size]="70"></app-type-icon>
                                     @if (row.teraType) {
                                     <button type="button" class="tera-pill" [class.is-active]="row.useTera"
-                                        [attr.aria-pressed]="row.useTera" (click)="toggleTeraType(row.pokemon.id)">
+                                        [attr.aria-pressed]="row.useTera"
+                                        (click)="toggleTeraType(row.pokemon.id.toString())">
                                         <span aria-hidden="true">Tera: {{ row.teraType }}</span>
                                         <span class="sr-only">Toggle Tera type for {{ row.pokemon.name }}</span>
                                         <span class="tera-pill__state">{{ row.useTera ? 'On' : 'Off' }}</span>
@@ -126,7 +120,8 @@
                             </div>
                             @for (cell of row.cells; track cell.type) {
                             <div class="weakness-cell" role="cell" [attr.aria-label]="cell.type + ' damage'"
-                                [class.is-immune]="cell.multiplier === 0" [class.is-resist]="cell.multiplier > 0 && cell.multiplier < 1"
+                                [class.is-immune]="cell.multiplier === 0"
+                                [class.is-resist]="cell.multiplier > 0 && cell.multiplier < 1"
                                 [class.is-neutral]="cell.multiplier === 1" [class.is-weak]="cell.multiplier > 1">
                                 {{ cell.label }}
                             </div>
