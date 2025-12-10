@@ -38,6 +38,7 @@
             (teraTypeChange)="facade.changePokemonTeraType($event)"
             (openImport)="openImportDialog()"
             (openExport)="openExportDialog()"
+            (openWeaknesses)="openWeaknessDialog()"
         />
 
         @if (showImportModal) {
@@ -84,6 +85,54 @@
             <div class="modal__footer">
                 <button type="button" class="modal__button" (click)="closeExportDialog()">Close</button>
                 <button type="button" class="modal__button modal__button--primary" (click)="copyExportText()" [disabled]="!exportText">Copy</button>
+            </div>
+        </div>
+        }
+
+        @if (showWeaknessModal) {
+        <div class="modal-backdrop" (click)="closeWeaknessDialog()"></div>
+        <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="weakness-title">
+            <div class="modal__header">
+                <h3 class="modal__title" id="weakness-title">Team weaknesses</h3>
+                <button type="button" class="modal__close" (click)="closeWeaknessDialog()">×</button>
+            </div>
+            <div class="modal__body">
+                <p class="modal__note">Multipliers are calculated using each Pokémon's current typing. If a Tera type is set, it replaces the base typing for these calculations.</p>
+                <div class="weakness-table-wrapper" role="table" aria-label="Type weaknesses">
+                    <div class="weakness-table" role="rowgroup">
+                        <div class="weakness-row weakness-row--header" role="row">
+                            <div class="weakness-cell weakness-cell__pokemon" role="columnheader">Pokémon</div>
+                            @for (type of typeColumns; track type.name) {
+                            <div class="weakness-cell weakness-cell__type" role="columnheader">
+                                <app-type-icon [typeDetails]="[type]" [size]="32"></app-type-icon>
+                            </div>
+                            }
+                        </div>
+                        @for (row of weaknessTable(); track row.pokemon.id) {
+                        <div class="weakness-row" role="row">
+                            <div class="weakness-cell weakness-cell__pokemon" role="rowheader">
+                                <div class="pokemon-name">{{ row.pokemon.name }}</div>
+                                <div class="pokemon-types">
+                                    <app-type-icon [typeDetails]="row.pokemon.typeDetails" [size]="20"></app-type-icon>
+                                    @if (row.teraType) {
+                                    <span class="tera-pill">Tera: {{ row.teraType }}</span>
+                                    }
+                                </div>
+                            </div>
+                            @for (cell of row.cells; track cell.type) {
+                            <div class="weakness-cell" role="cell" [attr.aria-label]="cell.type + ' damage'"
+                                [class.is-immune]="cell.multiplier === 0" [class.is-resist]="cell.multiplier > 0 && cell.multiplier < 1"
+                                [class.is-neutral]="cell.multiplier === 1" [class.is-weak]="cell.multiplier > 1">
+                                {{ cell.label }}
+                            </div>
+                            }
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="modal__footer">
+                <button type="button" class="modal__button" (click)="closeWeaknessDialog()">Close</button>
             </div>
         </div>
         }
