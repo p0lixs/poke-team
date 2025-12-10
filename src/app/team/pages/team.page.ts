@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TeamFacade } from '../data/team.facade';
 import { ResultsListComponent } from '../ui/results-list/results-list.component';
@@ -29,6 +29,7 @@ export class TeamPage {
   copyStatus: 'idle' | 'copied' | 'error' = 'idle';
   readonly typeColumns: TypeInfo[] = this.typeEffectiveness.getTypes();
   readonly weaknessTable = computed(() => this.buildWeaknessTable());
+  private readonly activeTeraTypes = signal<Set<string>>(new Set());
 
   openImportDialog() {
     this.importText = '';
@@ -65,6 +66,17 @@ export class TeamPage {
 
   closeWeaknessDialog() {
     this.showWeaknessModal = false;
+  }
+
+  toggleTeraType(pokemonId: string) {
+    const current = new Set(this.activeTeraTypes());
+    if (current.has(pokemonId)) {
+      current.delete(pokemonId);
+    } else {
+      current.add(pokemonId);
+    }
+
+    this.activeTeraTypes.set(current);
   }
 
   async confirmImport() {
@@ -115,17 +127,34 @@ export class TeamPage {
   private buildWeaknessTable() {
     const types = this.typeColumns;
     const team = this.facade.team();
+    const activeTera = this.activeTeraTypes();
 
-    return team.map((pokemon) => {
+    const rows = team.map((pokemon) => {
       const defenses = this.normalizeTypes(pokemon);
       const teraType = pokemon.teraType?.toLowerCase().trim() || null;
+      const useTera = !!teraType && activeTera.has(pokemon.id);
+      const appliedTeraType = useTera ? teraType : null;
       const cells = types.map((type) => {
-        const multiplier = this.typeEffectiveness.getMultiplier(type.name, defenses, teraType);
+        const multiplier = this.typeEffectiveness.getMultiplier(type.name, defenses, appliedTeraType);
         return { type: type.name, multiplier, label: this.formatMultiplier(multiplier) };
       });
 
-      return { pokemon, cells, teraType };
+      return { pokemon, cells, teraType, useTera };
     });
+
+    const summary = types.map((type) => {
+      const count = rows.reduce((total, row) => {
+        const cell = row.cells.find((c) => c.type === type.name);
+        if (cell && this.isStrongWeakness(cell.multiplier)) {
+          return total + 1;
+        }
+        return total;
+      }, 0);
+
+      return { type: type.name, count };
+    });
+
+    return { rows, summary };
   }
 
   private normalizeTypes(pokemon: PokemonVM): string[] {
@@ -150,5 +179,9 @@ export class TeamPage {
 
   private isClose(value: number, target: number): boolean {
     return Math.abs(value - target) < 0.01;
+  }
+
+  private isStrongWeakness(multiplier: number): boolean {
+    return this.isClose(multiplier, 2) || this.isClose(multiplier, 4);
   }
 }

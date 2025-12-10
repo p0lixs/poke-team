@@ -97,7 +97,7 @@
                 <button type="button" class="modal__close" (click)="closeWeaknessDialog()">×</button>
             </div>
             <div class="modal__body">
-                <p class="modal__note">Multipliers are calculated using each Pokémon's current typing. If a Tera type is set, it replaces the base typing for these calculations.</p>
+                <p class="modal__note">Multipliers use each Pokémon's base typing by default. Toggle a Tera type to recalculate weaknesses using that typing.</p>
                 <div class="weakness-table-wrapper" role="table" aria-label="Type weaknesses">
                     <div class="weakness-table" role="rowgroup">
                         <div class="weakness-row weakness-row--header" role="row">
@@ -108,14 +108,19 @@
                             </div>
                             }
                         </div>
-                        @for (row of weaknessTable(); track row.pokemon.id) {
+                        @for (row of weaknessTable().rows; track row.pokemon.id) {
                         <div class="weakness-row" role="row">
                             <div class="weakness-cell weakness-cell__pokemon" role="rowheader">
                                 <div class="pokemon-name">{{ row.pokemon.name }}</div>
                                 <div class="pokemon-types">
                                     <app-type-icon [typeDetails]="row.pokemon.typeDetails" [size]="20"></app-type-icon>
                                     @if (row.teraType) {
-                                    <span class="tera-pill">Tera: {{ row.teraType }}</span>
+                                    <button type="button" class="tera-pill" [class.is-active]="row.useTera"
+                                        [attr.aria-pressed]="row.useTera" (click)="toggleTeraType(row.pokemon.id)">
+                                        <span aria-hidden="true">Tera: {{ row.teraType }}</span>
+                                        <span class="sr-only">Toggle Tera type for {{ row.pokemon.name }}</span>
+                                        <span class="tera-pill__state">{{ row.useTera ? 'On' : 'Off' }}</span>
+                                    </button>
                                     }
                                 </div>
                             </div>
@@ -128,6 +133,12 @@
                             }
                         </div>
                         }
+                        <div class="weakness-row weakness-row--summary" role="row">
+                            <div class="weakness-cell weakness-cell__pokemon" role="rowheader">Weak x2/x4 count</div>
+                            @for (summary of weaknessTable().summary; track summary.type) {
+                            <div class="weakness-cell weakness-cell__summary" role="cell">{{ summary.count }}</div>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
