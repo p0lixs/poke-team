@@ -32,7 +32,9 @@ export class PokemonApi {
   }
 
   getAllItems(): Observable<NamedAPIResource[]> {
-    return from(this.itemClient.listItems(0, 2000)).pipe(map((response) => response.results ?? []));
+    return from(this.itemClient.listItems(0, 10000)).pipe(
+      map((response) => response.results ?? [])
+    );
   }
 
   getAllNatures(): Observable<(NatureDTO & { url: string })[]> {
