@@ -1,17 +1,28 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TypeIcon } from '../../shared/ui/type-icon/type-icon';
 import { TeamFacade } from '../data/team.facade';
 import { TypeEffectivenessService, TypeInfo } from '../data/type-effectiveness.service';
 import { PokemonVM } from '../models/view.model';
 import { ResultsListComponent } from '../ui/results-list/results-list.component';
 import { SearchBoxComponent } from '../ui/search-box/search-box.component';
 import { TeamPanelComponent } from '../ui/team-panel/team-panel.component';
+import { ExportTeamModalComponent } from '../ui/modals/export-team-modal.component';
+import { ImportTeamModalComponent } from '../ui/modals/import-team-modal.component';
+import { TeamWeaknessModalComponent } from '../ui/modals/team-weakness-modal.component';
+import { WeaknessTable } from '../ui/modals/weakness-table.model';
 
 @Component({
   standalone: true,
   selector: 'app-team-page',
-  imports: [FormsModule, SearchBoxComponent, ResultsListComponent, TeamPanelComponent, TypeIcon],
+  imports: [
+    FormsModule,
+    SearchBoxComponent,
+    ResultsListComponent,
+    TeamPanelComponent,
+    ImportTeamModalComponent,
+    ExportTeamModalComponent,
+    TeamWeaknessModalComponent,
+  ],
   styleUrls: ['./team.page.scss'],
   templateUrl: './team.page.html',
 })
@@ -28,7 +39,7 @@ export class TeamPage {
   isImporting = false;
   copyStatus: 'idle' | 'copied' | 'error' = 'idle';
   readonly typeColumns: TypeInfo[] = this.typeEffectiveness.getTypes();
-  readonly weaknessTable = computed(() => this.buildWeaknessTable());
+  readonly weaknessTable = computed<WeaknessTable>(() => this.buildWeaknessTable());
   private readonly activeTeraTypes = signal<Set<string>>(new Set());
 
   openImportDialog() {
@@ -124,7 +135,7 @@ export class TeamPage {
     }, 2000);
   }
 
-  private buildWeaknessTable() {
+  private buildWeaknessTable(): WeaknessTable {
     const types = this.typeColumns;
     const team = this.facade.team();
     const activeTera = this.activeTeraTypes();
@@ -140,7 +151,17 @@ export class TeamPage {
           defenses,
           appliedTeraType
         );
-        return { type: type.name, multiplier, label: this.formatMultiplier(multiplier) };
+        return {
+          type: type.name,
+          multiplier,
+          label: this.formatMultiplier(multiplier),
+          isImmune: this.isClose(multiplier, 0),
+          isResist: multiplier > 0 && multiplier < 1,
+          isQuarterResist: this.isClose(multiplier, 0.25),
+          isNeutral: this.isClose(multiplier, 1),
+          isWeak: multiplier > 1,
+          isQuadWeak: this.isClose(multiplier, 4),
+        };
       });
 
       return { pokemon, cells, teraType, useTera };
@@ -183,14 +204,6 @@ export class TeamPage {
 
   private isClose(value: number, target: number): boolean {
     return Math.abs(value - target) < 0.01;
-  }
-
-  isQuarterResistance(multiplier: number): boolean {
-    return this.isClose(multiplier, 0.25);
-  }
-
-  isQuadWeakness(multiplier: number): boolean {
-    return this.isClose(multiplier, 4);
   }
 
   private isStrongWeakness(multiplier: number): boolean {

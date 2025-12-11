@@ -1,0 +1,27 @@
+<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
+  <div class="modal__header">
+    <h3 class="modal__title" id="import-title">Import team</h3>
+    <button type="button" class="modal__close" (click)="close.emit()" [disabled]="isImporting">×</button>
+  </div>
+  <div class="modal__body">
+    <label class="modal__label" for="team-import-text">Team text</label>
+    <textarea
+      id="team-import-text"
+      class="modal__textarea"
+      [(ngModel)]="importText"
+      (ngModelChange)="importTextChange.emit($event)"
+      placeholder="Paste your team here"
+      [disabled]="isImporting"
+    ></textarea>
+    @if (importError) {
+      <p class="modal__error">{{ importError }}</p>
+    }
+  </div>
+  <div class="modal__footer">
+    <button type="button" class="modal__button" (click)="close.emit()" [disabled]="isImporting">Cancel</button>
+    <button type="button" class="modal__button modal__button--primary" (click)="confirm.emit()" [disabled]="isImporting">
+      Import
+    </button>
+  </div>
+</div>
