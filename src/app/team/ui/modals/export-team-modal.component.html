@@ -1,0 +1,26 @@
+<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
+  <div class="modal__header">
+    <h3 class="modal__title" id="export-title">Export team</h3>
+    <button type="button" class="modal__close" (click)="close.emit()">×</button>
+  </div>
+  <div class="modal__body">
+    <label class="modal__label" for="team-export-text">Team text</label>
+    <textarea id="team-export-text" class="modal__textarea" [value]="exportText" readonly></textarea>
+    <div class="modal__note">
+      @if (copyStatus === 'copied') {
+        <span class="modal__feedback modal__feedback--success">Copied to clipboard</span>
+      } @else if (copyStatus === 'error') {
+        <span class="modal__feedback modal__feedback--error">Copy failed. Select the text manually.</span>
+      } @else {
+        <span class="modal__feedback">Use the copy button or select the text manually.</span>
+      }
+    </div>
+  </div>
+  <div class="modal__footer">
+    <button type="button" class="modal__button" (click)="close.emit()">Close</button>
+    <button type="button" class="modal__button modal__button--primary" (click)="copy.emit()" [disabled]="!exportText">
+      Copy
+    </button>
+  </div>
+</div>
