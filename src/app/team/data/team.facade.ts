@@ -286,7 +286,7 @@ export class TeamFacade {
       return;
     }
 
-    const batch = names.slice(offset, offset + 20);
+    const batch = names.slice(offset);
     this.isFetchingMore.set(true);
     this.loading.set(true);
 
