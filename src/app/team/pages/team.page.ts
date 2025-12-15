@@ -3,13 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { TeamFacade } from '../data/team.facade';
 import { TypeEffectivenessService, TypeInfo } from '../data/type-effectiveness.service';
 import { PokemonVM } from '../models/view.model';
+import { ExportTeamModalComponent } from '../ui/modals/export-team-modal/export-team-modal.component';
+import { ImportTeamModalComponent } from '../ui/modals/import-team-modal/import-team-modal.component';
+import { TeamWeaknessModalComponent } from '../ui/modals/team-weakness-modal/team-weakness-modal.component';
+import { WeaknessTable } from '../ui/modals/team-weakness-modal/weakness-table.model';
 import { ResultsListComponent } from '../ui/results-list/results-list.component';
 import { SearchBoxComponent } from '../ui/search-box/search-box.component';
 import { TeamPanelComponent } from '../ui/team-panel/team-panel.component';
-import { ExportTeamModalComponent } from '../ui/modals/export-team-modal.component';
-import { ImportTeamModalComponent } from '../ui/modals/import-team-modal.component';
-import { TeamWeaknessModalComponent } from '../ui/modals/team-weakness-modal.component';
-import { WeaknessTable } from '../ui/modals/weakness-table.model';
 
 @Component({
   standalone: true,

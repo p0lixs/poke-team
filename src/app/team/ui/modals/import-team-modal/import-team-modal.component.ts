@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   selector: 'app-import-team-modal',
   imports: [FormsModule],
-  styleUrls: ['./modal.styles.scss', './import-team-modal.component.scss'],
+  styleUrls: ['../modal.styles.scss', './import-team-modal.component.scss'],
   templateUrl: './import-team-modal.component.html',
 })
 export class ImportTeamModalComponent {

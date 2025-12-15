@@ -1,4 +1,4 @@
-import { PokemonVM } from '../../models/view.model';
+import { PokemonVM } from '../../../models/view.model';
 
 export interface WeaknessCell {
   type: string;

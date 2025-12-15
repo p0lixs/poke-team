@@ -30,13 +30,12 @@
 
         @if (showImportModal) {
         <app-import-team-modal [importText]="importText" [importError]="importError" [isImporting]="isImporting"
-            (close)="closeImportDialog()" (confirm)="confirmImport()"
-            (importTextChange)="importText = $event" />
+            (close)="closeImportDialog()" (confirm)="confirmImport()" (importTextChange)="importText = $event" />
         }
 
         @if (showExportModal) {
-        <app-export-team-modal [exportText]="exportText" [copyStatus]="copyStatus"
-            (close)="closeExportDialog()" (copy)="copyExportText()" />
+        <app-export-team-modal [exportText]="exportText" [copyStatus]="copyStatus" (close)="closeExportDialog()"
+            (copy)="copyExportText()" />
         }
 
         @if (showWeaknessModal) {

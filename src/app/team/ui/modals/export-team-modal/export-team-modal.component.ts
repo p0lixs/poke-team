@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 @Component({
   standalone: true,
   selector: 'app-export-team-modal',
-  styleUrls: ['./modal.styles.scss', './export-team-modal.component.scss'],
+  styleUrls: ['../modal.styles.scss', './export-team-modal.component.scss'],
   templateUrl: './export-team-modal.component.html',
 })
 export class ExportTeamModalComponent {
