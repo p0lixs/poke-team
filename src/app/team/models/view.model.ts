@@ -11,6 +11,7 @@ export interface PokemonVM {
   id: number;
   name: string;
   sprite: string | null;
+  usagePercent: number | null;
   types: string[];
   typeDetails: { name: string; url: string }[];
   stats: PokemonStatVM[];

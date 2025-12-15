@@ -6,6 +6,9 @@
     </div>
     <div class="center">
       <h4 class="name">{{ p.name }}</h4>
+      @if (p.usagePercent !== null) {
+      <p class="usage">Usage: {{ p.usagePercent | number: '1.2-2' }}%</p>
+      }
       <app-type-icon [typeDetails]="p.typeDetails" [size]="80"></app-type-icon>
     </div>
     <div class="right">
