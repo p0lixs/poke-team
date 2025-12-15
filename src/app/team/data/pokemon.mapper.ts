@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   STAT_EV_MAX,
   STAT_EV_MIN,
@@ -23,11 +23,14 @@ import {
   PokemonStatVM,
   PokemonVM,
 } from '../models/view.model';
+import { PokemonUsageService } from './pokemon-usage.service';
 
 const LATEST_VERSION_GROUPS = new Set(['scarlet-violet', 'the-teal-mask', 'the-indigo-disk']);
 
 @Injectable({ providedIn: 'root' })
 export class PokemonMapper {
+  private usage = inject(PokemonUsageService);
+
   toVM(dto: PokemonDTO): PokemonVM {
     const abilityOptions = (dto.abilities ?? [])
       .slice()
@@ -44,6 +47,7 @@ export class PokemonMapper {
       id: dto.id,
       name: dto.name,
       sprite: dto.sprites.front_default,
+      usagePercent: this.usage.getUsagePercent(dto.name),
       types: dto.types.sort((a, b) => a.slot - b.slot).map((t) => t.type.name),
       typeDetails: dto.types
         .sort((a, b) => a.slot - b.slot)
@@ -86,6 +90,10 @@ export class PokemonMapper {
     const selectedAbility =
       this.selectAbilityOption(abilityOptions, value.selectedAbility?.url ?? null) ??
       (!value.selectedAbility && abilityOptions.length ? abilityOptions[0] : null);
+    const usagePercent =
+      typeof value.usagePercent === 'number'
+        ? value.usagePercent
+        : this.usage.getUsagePercent(value.name);
     const heldItem = this.normalizeItemOption(value.heldItem);
     const level = this.normalizeLevel(value.level);
     const selectedNature = this.normalizeNatureOption(value.selectedNature);
@@ -98,6 +106,7 @@ export class PokemonMapper {
       typeDetails: Array.isArray(value.typeDetails)
         ? value.typeDetails.map((type) => ({ name: type.name, url: type.url }))
         : [],
+      usagePercent,
       stats,
       level,
       teraType: value.teraType?.trim() || null,
