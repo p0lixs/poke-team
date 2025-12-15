@@ -18,14 +18,8 @@
           <label class="modal__label" for="search-name">Name</label>
           <button type="button" class="chip chip--ghost" (click)="clearFilters()">Clear filters</button>
         </div>
-        <input
-          id="search-name"
-          type="search"
-          [ngModel]="filters.name"
-          (ngModelChange)="onNameChange($event)"
-          placeholder="Search by name..."
-          class="filter-card__input"
-        />
+        <input id="search-name" type="search" [ngModel]="filters.name" (ngModelChange)="onNameChange($event)"
+          placeholder="Search by name..." class="filter-card__input" />
         <p class="helper">When only filtering by name, type at least 2 letters.</p>
       </div>
 
@@ -46,15 +40,8 @@
           }
         </div>
         <div class="filter-card__input-row">
-          <input
-            id="type-filter"
-            list="type-options"
-            [(ngModel)]="typeInput"
-            (change)="addTypeFromInput()"
-            (keyup.enter)="addTypeFromInput()"
-            placeholder="fire, flying, water..."
-            class="filter-card__input"
-          />
+          <input id="type-filter" list="type-options" [(ngModel)]="typeInput" (change)="addTypeFromInput()"
+            (keyup.enter)="addTypeFromInput()" placeholder="fire, flying, water..." class="filter-card__input" />
           <datalist id="type-options">
             @for (option of typeOptions; track option) {
             <option [value]="option"></option>
@@ -67,7 +54,7 @@
       <div class="filter-card">
         <div class="filter-card__header">
           <label class="modal__label" for="ability-filter">Abilities</label>
-          <span class="helper">Autocomplete from the Pokédex</span>
+
         </div>
         <div class="chip-row">
           @for (ability of filters.abilities; track ability) {
@@ -81,15 +68,9 @@
           }
         </div>
         <div class="filter-card__input-row">
-          <input
-            id="ability-filter"
-            list="ability-options"
-            [(ngModel)]="abilityInput"
-            (change)="addAbilityFromInput()"
-            (keyup.enter)="addAbilityFromInput()"
-            placeholder="levitate, blaze, serene-grace..."
-            class="filter-card__input"
-          />
+          <input id="ability-filter" list="ability-options" [(ngModel)]="abilityInput" (change)="addAbilityFromInput()"
+            (keyup.enter)="addAbilityFromInput()" placeholder="levitate, blaze, serene-grace..."
+            class="filter-card__input" />
           <datalist id="ability-options">
             @for (option of abilityOptions; track option) {
             <option [value]="option"></option>
@@ -116,15 +97,8 @@
           }
         </div>
         <div class="filter-card__input-row">
-          <input
-            id="move-filter"
-            list="move-options"
-            [(ngModel)]="moveInput"
-            (change)="addMoveFromInput()"
-            (keyup.enter)="addMoveFromInput()"
-            placeholder="brave-bird, volt-switch..."
-            class="filter-card__input"
-          />
+          <input id="move-filter" list="move-options" [(ngModel)]="moveInput" (change)="addMoveFromInput()"
+            (keyup.enter)="addMoveFromInput()" placeholder="brave-bird, volt-switch..." class="filter-card__input" />
           <datalist id="move-options">
             @for (option of moveOptions; track option) {
             <option [value]="option"></option>

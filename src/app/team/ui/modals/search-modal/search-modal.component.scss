@@ -18,8 +18,8 @@
 }
 
 .filters-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-flow: row wrap;
   gap: 0.5rem;
   align-items: start;
 }
@@ -69,14 +69,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
-  min-height: 32px;
+  min-height: 20px;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.35rem 0.6rem;
+  padding: 0.1rem 0.8rem;
   background: #e5e7eb;
   border-radius: 999px;
   font-weight: 600;
