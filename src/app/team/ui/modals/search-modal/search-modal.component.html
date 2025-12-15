@@ -151,16 +151,46 @@
       <table class="results-table">
         <thead>
           <tr>
-            <th>Pokémon</th>
-            <th>Types</th>
-            <th>Abilities</th>
-            <th>Base stats</th>
+            <th>
+              <button type="button" class="sort-button" (click)="setSort('name')">
+                Pokémon
+                <span class="sort-indicator" *ngIf="sort.key === 'name'">
+                  {{ sort.direction === 'asc' ? '↑' : '↓' }}
+                </span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-button" (click)="setSort('types')">
+                Types
+                <span class="sort-indicator" *ngIf="sort.key === 'types'">
+                  {{ sort.direction === 'asc' ? '↑' : '↓' }}
+                </span>
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-button" (click)="setSort('abilities')">
+                Abilities
+                <span class="sort-indicator" *ngIf="sort.key === 'abilities'">
+                  {{ sort.direction === 'asc' ? '↑' : '↓' }}
+                </span>
+              </button>
+            </th>
+            @for (stat of statColumns; track stat.key) {
+            <th>
+              <button type="button" class="sort-button" (click)="setSort(stat.key)">
+                {{ stat.label }}
+                <span class="sort-indicator" *ngIf="sort.key === stat.key">
+                  {{ sort.direction === 'asc' ? '↑' : '↓' }}
+                </span>
+              </button>
+            </th>
+            }
             <th></th>
           </tr>
         </thead>
         <tbody>
-          @if (results.length) {
-          @for (pokemon of results; track trackById($index, pokemon)) {
+          @if (sortedResults.length) {
+          @for (pokemon of sortedResults; track trackById($index, pokemon)) {
           <tr>
             <td>
               <div class="pokemon-cell">
@@ -183,16 +213,9 @@
                 }
               </div>
             </td>
-            <td>
-              <div class="stats-grid">
-                @for (stat of pokemon.stats; track stat.name) {
-                <div class="stat">
-                  <span class="stat__label">{{ stat.label }}</span>
-                  <span class="stat__value">{{ stat.baseValue }}</span>
-                </div>
-                }
-              </div>
-            </td>
+            @for (stat of statColumns; track stat.key) {
+            <td class="stat-cell">{{ getStatBaseValue(pokemon, stat.key) }}</td>
+            }
             <td class="actions">
               <button type="button" class="modal__button modal__button--primary" (click)="add.emit(pokemon)">
                 Add
@@ -202,7 +225,7 @@
           }
           } @else {
           <tr>
-            <td colspan="5" class="empty">
+            <td [attr.colspan]="statColumns.length + 4" class="empty">
               @if (loading) {
               <span>Preparing results...</span>
               } @else {
