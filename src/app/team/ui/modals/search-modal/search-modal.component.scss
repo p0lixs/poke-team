@@ -190,28 +190,10 @@
   gap: 0.35rem;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 0.35rem;
-}
-
-.stat {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.35rem 0.45rem;
-  border-radius: 0.5rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-
-  &__label {
-    font-weight: 700;
-  }
-
-  &__value {
-    color: #1f2937;
-  }
+.stat-cell {
+  text-align: center;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .actions {
@@ -226,6 +208,23 @@
 
 .footer-spacer {
   flex: 1;
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sort-indicator {
+  font-size: 0.85rem;
+  color: #6b7280;
 }
 
 @media (max-width: 900px) {
