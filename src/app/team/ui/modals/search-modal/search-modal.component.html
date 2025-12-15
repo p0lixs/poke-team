@@ -1,0 +1,228 @@
+<div class="modal-backdrop" (click)="close.emit()"></div>
+<div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="search-title">
+  <div class="modal__header">
+    <div>
+      <p class="modal__eyebrow">Búsqueda combinada</p>
+      <h3 class="modal__title" id="search-title">Encuentra Pokémon por múltiples filtros</h3>
+      <p class="modal__subtitle">
+        Usa el nombre, tipos, habilidades y movimientos para refinar los resultados. Los filtros se combinan
+        de forma acumulativa.
+      </p>
+    </div>
+    <button type="button" class="modal__close" (click)="close.emit()">×</button>
+  </div>
+
+  <div class="modal__body modal__body--comfort">
+    <div class="filters-grid">
+      <div class="filter-card">
+        <div class="filter-card__header">
+          <label class="modal__label" for="search-name">Nombre</label>
+          <button type="button" class="chip chip--ghost" (click)="clearFilters()">Limpiar filtros</button>
+        </div>
+        <input
+          id="search-name"
+          type="search"
+          [ngModel]="filters.name"
+          (ngModelChange)="onNameChange($event)"
+          placeholder="Busca por nombre..."
+          class="filter-card__input"
+        />
+        <p class="helper">Si solo filtras por nombre, escribe al menos 2 letras.</p>
+      </div>
+
+      <div class="filter-card">
+        <div class="filter-card__header">
+          <label class="modal__label" for="type-filter">Tipos</label>
+          <span class="helper">Puedes añadir varios</span>
+        </div>
+        <div class="chip-row">
+          @for (type of filters.types; track type) {
+          <span class="chip">
+            {{ type }}
+            <button type="button" class="chip__remove" (click)="removeFilter('types', type)">×</button>
+          </span>
+          }
+          @if (!filters.types.length) {
+          <span class="helper">Añade uno o más tipos para combinarlos.</span>
+          }
+        </div>
+        <div class="filter-card__input-row">
+          <input
+            id="type-filter"
+            list="type-options"
+            [(ngModel)]="typeInput"
+            (change)="addTypeFromInput()"
+            (keyup.enter)="addTypeFromInput()"
+            placeholder="fire, flying, water..."
+            class="filter-card__input"
+          />
+          <datalist id="type-options">
+            @for (option of typeOptions; track option) {
+            <option [value]="option"></option>
+            }
+          </datalist>
+          <button type="button" class="modal__button" (click)="addTypeFromInput()">Añadir</button>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <div class="filter-card__header">
+          <label class="modal__label" for="ability-filter">Habilidades</label>
+          <span class="helper">Auto completar desde la Pokédex</span>
+        </div>
+        <div class="chip-row">
+          @for (ability of filters.abilities; track ability) {
+          <span class="chip">
+            {{ ability }}
+            <button type="button" class="chip__remove" (click)="removeFilter('abilities', ability)">×</button>
+          </span>
+          }
+          @if (!filters.abilities.length) {
+          <span class="helper">Ejemplo: levitate, pressure...</span>
+          }
+        </div>
+        <div class="filter-card__input-row">
+          <input
+            id="ability-filter"
+            list="ability-options"
+            [(ngModel)]="abilityInput"
+            (change)="addAbilityFromInput()"
+            (keyup.enter)="addAbilityFromInput()"
+            placeholder="levitate, blaze, serene-grace..."
+            class="filter-card__input"
+          />
+          <datalist id="ability-options">
+            @for (option of abilityOptions; track option) {
+            <option [value]="option"></option>
+            }
+          </datalist>
+          <button type="button" class="modal__button" (click)="addAbilityFromInput()">Añadir</button>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <div class="filter-card__header">
+          <label class="modal__label" for="move-filter">Movimientos</label>
+          <span class="helper">Encuentra Pokémon que puedan aprenderlos</span>
+        </div>
+        <div class="chip-row">
+          @for (move of filters.moves; track move) {
+          <span class="chip">
+            {{ move }}
+            <button type="button" class="chip__remove" (click)="removeFilter('moves', move)">×</button>
+          </span>
+          }
+          @if (!filters.moves.length) {
+          <span class="helper">Ejemplo: brave-bird, ice-beam...</span>
+          }
+        </div>
+        <div class="filter-card__input-row">
+          <input
+            id="move-filter"
+            list="move-options"
+            [(ngModel)]="moveInput"
+            (change)="addMoveFromInput()"
+            (keyup.enter)="addMoveFromInput()"
+            placeholder="brave-bird, volt-switch..."
+            class="filter-card__input"
+          />
+          <datalist id="move-options">
+            @for (option of moveOptions; track option) {
+            <option [value]="option"></option>
+            }
+          </datalist>
+          <button type="button" class="modal__button" (click)="addMoveFromInput()">Añadir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-row">
+      @if (loading) {
+      <span class="pill pill--info">Buscando resultados...</span>
+      }
+      @if (!loading && results.length) {
+      <span class="pill">{{ results.length }} Pokémon cargados</span>
+      }
+      @if (error) {
+      <span class="pill pill--error">{{ error }}</span>
+      }
+    </div>
+
+    <div class="results-container">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Pokémon</th>
+            <th>Tipos</th>
+            <th>Habilidades</th>
+            <th>Stats base</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (results.length) {
+          @for (pokemon of results; track trackById($index, pokemon)) {
+          <tr>
+            <td>
+              <div class="pokemon-cell">
+                <img class="sprite" [src]="pokemon.sprite || 'assets/placeholder-poke.png'" [alt]="pokemon.name" />
+                <div>
+                  <div class="pokemon-name">{{ pokemon.name }}</div>
+                  @if (pokemon.usagePercent !== null) {
+                  <div class="pokemon-usage">Uso: {{ pokemon.usagePercent | number: '1.2-2' }}%</div>
+                  }
+                </div>
+              </div>
+            </td>
+            <td>
+              <app-type-icon [typeDetails]="pokemon.typeDetails" [size]="70"></app-type-icon>
+            </td>
+            <td>
+              <div class="ability-list">
+                @for (ability of pokemon.abilityOptions; track ability.name) {
+                <span class="chip chip--compact">{{ ability.label }}</span>
+                }
+              </div>
+            </td>
+            <td>
+              <div class="stats-grid">
+                @for (stat of pokemon.stats; track stat.name) {
+                <div class="stat">
+                  <span class="stat__label">{{ stat.label }}</span>
+                  <span class="stat__value">{{ stat.baseValue }}</span>
+                </div>
+                }
+              </div>
+            </td>
+            <td class="actions">
+              <button type="button" class="modal__button modal__button--primary" (click)="add.emit(pokemon)">
+                Añadir
+              </button>
+            </td>
+          </tr>
+          }
+          } @else {
+          <tr>
+            <td colspan="5" class="empty">
+              @if (loading) {
+              <span>Preparando resultados...</span>
+              } @else {
+              <span>Empieza añadiendo filtros para mostrar coincidencias.</span>
+              }
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal__footer modal__footer--inline">
+      <button type="button" class="modal__button" (click)="close.emit()">Cerrar</button>
+      <span class="footer-spacer"></span>
+      <button type="button" class="modal__button" (click)="clearFilters()">Borrar filtros</button>
+      <button type="button" class="modal__button" (click)="loadMore.emit()" [disabled]="loading || !hasMore">
+        {{ loading ? 'Cargando...' : 'Cargar más' }}
+      </button>
+    </div>
+  </div>
+</div>

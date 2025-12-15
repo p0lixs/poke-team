@@ -1,22 +1,38 @@
 <div class="layout">
-    <section>
-        <app-search-box (valueChange)="facade.query.set($event)" (modeChange)="facade.setSearchMode($event)"></app-search-box>
-        @if(facade.results().length > 0){
-        <app-results-list [results]="facade.results()" [hasMore]="facade.hasMoreResults()"
-          (add)="facade.addToTeam($event)" (loadMore)="facade.loadMoreResults()" />
-        }
-        @if(facade.loading()){
-        <div class="muted" style="margin:.75rem 0">Searching...</div>
-        }
-        @if(facade.error()){
-        <div style="color:red">{{ facade.error() }}</div>
-        }
-        @if(!facade.loading() && facade.results().length === 0){
-        <p class="muted">
-            Type at least 2 letters to search.
-        </p>
+    <section class="search-panel">
+        <div class="search-panel__header">
+            <div>
+                <p class="eyebrow">Buscador avanzado</p>
+                <h2>Combina filtros de Pokédex</h2>
+                <p class="muted">Busca por nombre, tipos, habilidades y movimientos en un modal dedicado.</p>
+            </div>
+            <button type="button" class="primary" (click)="openSearchDialog()">Abrir búsqueda</button>
+        </div>
+
+        @if (facade.hasActiveFilters()) {
+        <div class="active-filters">
+            <p class="muted">Filtros activos</p>
+            <div class="tag-grid">
+                @for (type of facade.searchFilters().types; track type) {
+                <span class="tag">Tipo: {{ type }}</span>
+                }
+                @for (ability of facade.searchFilters().abilities; track ability) {
+                <span class="tag">Habilidad: {{ ability }}</span>
+                }
+                @for (move of facade.searchFilters().moves; track move) {
+                <span class="tag">Movimiento: {{ move }}</span>
+                }
+                @if (facade.searchFilters().name) {
+                <span class="tag">Nombre: "{{ facade.searchFilters().name }}"</span>
+                }
+            </div>
+            <p class="muted small">Los filtros se combinan: tipos + habilidades + movimientos.</p>
+        </div>
+        } @else {
+        <p class="muted">Abre el modal para añadir filtros y encontrar Pokémon específicos.</p>
         }
     </section>
+
     <aside>
         <app-team-panel [team]="facade.team()" [teamName]="facade.teamName()" [savedTeams]="facade.savedTeams()"
             [selectedTeamId]="facade.selectedTeamId()" [items]="facade.itemOptions()" [natures]="facade.natureOptions()"
@@ -45,3 +61,11 @@
         }
     </aside>
 </div>
+
+@if (showSearchModal) {
+<app-search-modal [filters]="facade.searchFilters()" [typeOptions]="facade.typeOptions()"
+    [abilityOptions]="facade.abilityOptions()" [moveOptions]="facade.moveOptions()" [results]="facade.results()"
+    [loading]="facade.loading()" [error]="facade.error()" [hasMore]="facade.hasMoreResults()"
+    (filtersChange)="facade.updateSearchFilters($event)" (add)="facade.addToTeam($event)"
+    (loadMore)="facade.loadMoreResults()" (close)="closeSearchDialog()" />
+}
