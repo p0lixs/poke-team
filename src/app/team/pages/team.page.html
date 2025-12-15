@@ -1,6 +1,6 @@
 <div class="layout">
     <section>
-        <app-search-box (valueChange)="facade.query.set($event)"></app-search-box>
+        <app-search-box (valueChange)="facade.query.set($event)" (modeChange)="facade.setSearchMode($event)"></app-search-box>
         @if(facade.results().length > 0){
         <app-results-list [results]="facade.results()" (add)="facade.addToTeam($event)" />
         }

@@ -1,2 +1,13 @@
-<input type="search" [value]="value()" (input)="onInput($any($event.target).value)"
-    placeholder="Search Pokémon by name..." />
+<div class="search-box">
+    <label class="mode-select">
+        <span>Modo de búsqueda</span>
+        <select [value]="mode()" (change)="onModeChange($any($event.target).value)">
+            <option value="name">Nombre</option>
+            <option value="type">Tipo</option>
+            <option value="ability">Habilidad</option>
+            <option value="move">Movimiento</option>
+        </select>
+    </label>
+
+    <input type="search" [value]="value()" (input)="onInput($any($event.target).value)" [placeholder]="placeholder()" />
+</div>

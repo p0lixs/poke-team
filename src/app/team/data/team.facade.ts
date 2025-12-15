@@ -19,9 +19,10 @@ import {
 } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
+  catchError,
+  combineLatest,
   debounceTime,
   distinctUntilChanged,
-  filter,
   firstValueFrom,
   forkJoin,
   map,
@@ -36,6 +37,7 @@ import { SavedTeam } from '../models/team.model';
 import { STAT_IV_MAX } from '../../shared/util/constants';
 import { parseTeamText } from './team-text.parser';
 import { ParsedPokemonSet, ParsedStatKey } from './team-text.types';
+import { SearchMode } from '../models/search-mode.type';
 
 const MAX_TEAM = 6;
 
@@ -66,6 +68,7 @@ export class TeamFacade {
 
   // --- Search state ---
   readonly query: WritableSignal<string> = signal('');
+  readonly searchMode: WritableSignal<SearchMode> = signal('name');
   private readonly allNames = signal<string[] | null>(null);
 
   readonly filteredNames = computed(() => {
@@ -195,38 +198,45 @@ export class TeamFacade {
     });
 
     // Reactive search using signals→observable
-    toObservable(this.query)
-      .pipe(
+    combineLatest([
+      toObservable(this.query).pipe(
         map((q) => q.trim().toLowerCase()),
         debounceTime(250),
-        distinctUntilChanged(),
-        tap(() => {
+        distinctUntilChanged()
+      ),
+      toObservable(this.searchMode).pipe(distinctUntilChanged()),
+    ])
+      .pipe(
+        switchMap(([query, mode]) => {
+          if (query.length < 2) {
+            this.loading.set(false);
+            this.results.set([]);
+            return of<PokemonDTO[]>([]);
+          }
+
           this.loading.set(true);
           this.error.set(null);
           this.results.set([]);
-        }),
-        filter((q) => q.length >= 2),
-        switchMap((q) => {
-          const candidates = this.filteredNames();
-          if (!candidates.length) return of<PokemonDTO[]>([]);
-          // fetch details for up to 20 matches in parallel
-          return forkJoin(
-            candidates.map((name) => this.api.getPokemonByName(name).pipe(take(1)))
+
+          return this.searchPokemon(query, mode).pipe(
+            catchError((err) => {
+              console.error(err);
+              this.error.set('Search error');
+              this.loading.set(false);
+              return of<PokemonDTO[]>([]);
+            })
           );
         })
       )
-      .subscribe({
-        next: (dtos: PokemonDTO[]) => {
-          const list = Array.isArray(dtos) ? dtos.map((dto) => this.mapper.toVM(dto)) : [];
-          this.results.set(list);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          console.error(err);
-          this.error.set('Search error');
-          this.loading.set(false);
-        },
+      .subscribe((dtos: PokemonDTO[]) => {
+        const list = Array.isArray(dtos) ? dtos.map((dto) => this.mapper.toVM(dto)) : [];
+        this.results.set(list);
+        this.loading.set(false);
       });
+  }
+
+  setSearchMode(mode: SearchMode) {
+    this.searchMode.set(mode);
   }
 
   async addToTeam(p: PokemonVM) {
@@ -376,6 +386,44 @@ export class TeamFacade {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  private searchPokemon(query: string, mode: SearchMode): Observable<PokemonDTO[]> {
+    switch (mode) {
+      case 'type':
+        return this.api.getTypeByName(query).pipe(
+          map((dto) => dto.pokemon?.map((entry) => entry.pokemon.name) ?? []),
+          map((names) => this.uniqueNames(names)),
+          switchMap((names) => this.loadPokemonDetails(names))
+        );
+      case 'ability':
+        return this.api.getAbilityByName(query).pipe(
+          map((dto) => dto.pokemon?.map((entry) => entry.pokemon.name) ?? []),
+          map((names) => this.uniqueNames(names)),
+          switchMap((names) => this.loadPokemonDetails(names))
+        );
+      case 'move':
+        return this.api.getMoveByName(query).pipe(
+          map((dto) => dto.learned_by_pokemon?.map((entry) => entry.name) ?? []),
+          map((names) => this.uniqueNames(names)),
+          switchMap((names) => this.loadPokemonDetails(names))
+        );
+      default:
+        const candidates = this.filteredNames();
+        if (!candidates.length) return of<PokemonDTO[]>([]);
+        return this.loadPokemonDetails(candidates);
+    }
+  }
+
+  private loadPokemonDetails(names: string[], limit = 20): Observable<PokemonDTO[]> {
+    const limited = names.slice(0, limit);
+    if (!limited.length) return of<PokemonDTO[]>([]);
+
+    return forkJoin(limited.map((name) => this.api.getPokemonByName(name).pipe(take(1))));
+  }
+
+  private uniqueNames(names: string[]): string[] {
+    return Array.from(new Set(names.map((name) => name.toLowerCase())));
   }
 
   private syncDraftMembers(members: PokemonVM[]) {
