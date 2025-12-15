@@ -21,7 +21,6 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import {
   Observable,
   catchError,
-  combineLatest,
   debounceTime,
   distinctUntilChanged,
   firstValueFrom,
@@ -37,7 +36,7 @@ import { SavedTeam } from '../models/team.model';
 import { STAT_IV_MAX } from '../../shared/util/constants';
 import { parseTeamText } from './team-text.parser';
 import { ParsedPokemonSet, ParsedStatKey } from './team-text.types';
-import { SearchMode } from '../models/search-mode.type';
+import { SearchFilters } from '../models/search-filters.model';
 
 const MAX_TEAM = 6;
 
@@ -67,16 +66,17 @@ export class TeamFacade {
   });
 
   // --- Search state ---
-  readonly query: WritableSignal<string> = signal('');
-  readonly searchMode: WritableSignal<SearchMode> = signal('name');
-  private readonly allNames = signal<string[] | null>(null);
-
-  readonly filteredNames = computed(() => {
-    const q = this.query().trim().toLowerCase();
-    const all = this.allNames();
-    if (!q || !all) return [] as string[];
-    return all.filter((n) => n.includes(q));
+  readonly searchFilters: WritableSignal<SearchFilters> = signal({
+    name: '',
+    types: [],
+    abilities: [],
+    moves: [],
   });
+  private readonly allNames = signal<string[] | null>(null);
+  readonly typeOptions = signal<string[]>([]);
+  readonly abilityOptions = signal<string[]>([]);
+  readonly moveOptions = signal<string[]>([]);
+  readonly hasActiveFilters = computed(() => this.computeHasActiveFilters(this.searchFilters()));
 
   readonly results = signal<PokemonVM[]>([]);
   readonly loading = signal(false);
@@ -105,6 +105,30 @@ export class TeamFacade {
       .subscribe({
         next: (names) => this.allNames.set(names),
         error: () => this.error.set('Unable to load the Pokémon list'),
+      });
+
+    this.api
+      .getAllTypeNames()
+      .pipe(take(1))
+      .subscribe({
+        next: (types) => this.typeOptions.set(this.sortOptions(types)),
+        error: (error) => console.error('Unable to load types from the API', error),
+      });
+
+    this.api
+      .getAllAbilityNames()
+      .pipe(take(1))
+      .subscribe({
+        next: (abilities) => this.abilityOptions.set(this.sortOptions(abilities)),
+        error: (error) => console.error('Unable to load abilities from the API', error),
+      });
+
+    this.api
+      .getAllMoveNames()
+      .pipe(take(1))
+      .subscribe({
+        next: (moves) => this.moveOptions.set(this.sortOptions(moves)),
+        error: (error) => console.error('Unable to load moves from the API', error),
       });
 
     this.api
@@ -204,27 +228,23 @@ export class TeamFacade {
     });
 
     // Reactive search using signals→observable
-    combineLatest([
-      toObservable(this.query).pipe(
-        map((q) => q.trim().toLowerCase()),
-        debounceTime(250),
-        distinctUntilChanged()
-      ),
-      toObservable(this.searchMode).pipe(distinctUntilChanged()),
-    ])
+    toObservable(this.searchFilters)
       .pipe(
-        switchMap(([query, mode]) => {
+        map((filters) => this.normalizeFilters(filters)),
+        debounceTime(250),
+        distinctUntilChanged((a, b) => this.areFiltersEqual(a, b)),
+        switchMap((filters) => {
           const searchId = ++this.searchRunId;
           this.activeSearchId.set(searchId);
           this.resetSearchState();
 
-          if (query.length < 2) {
+          if (!this.hasSearchCriteria(filters)) {
             this.loading.set(false);
             return of<{ names: string[]; searchId: number }>({ names: [], searchId });
           }
 
           this.loading.set(true);
-          return this.fetchSearchNames(query, mode).pipe(
+          return this.fetchSearchNames(filters).pipe(
             map((names) => ({ names, searchId })),
             catchError((err) => {
               console.error(err);
@@ -247,8 +267,13 @@ export class TeamFacade {
       });
   }
 
-  setSearchMode(mode: SearchMode) {
-    this.searchMode.set(mode);
+  updateSearchFilters(filters: SearchFilters) {
+    const normalized = this.normalizeFilters(filters);
+    if (this.areFiltersEqual(normalized, this.searchFilters())) {
+      return;
+    }
+
+    this.searchFilters.set(normalized);
   }
 
   loadMoreResults(searchId = this.activeSearchId()) {
@@ -439,23 +464,44 @@ export class TeamFacade {
     }
   }
 
-  private fetchSearchNames(query: string, mode: SearchMode): Observable<string[]> {
-    switch (mode) {
-      case 'type':
-        return this.api
-          .getTypeByName(query)
-          .pipe(map((dto) => this.uniqueNames(dto.pokemon?.map((entry) => entry.pokemon.name) ?? [])));
-      case 'ability':
-        return this.api
-          .getAbilityByName(query)
-          .pipe(map((dto) => this.uniqueNames(dto.pokemon?.map((entry) => entry.pokemon.name) ?? [])));
-      case 'move':
-        return this.api
-          .getMoveByName(query)
-          .pipe(map((dto) => this.uniqueNames(dto.learned_by_pokemon?.map((entry) => entry.name) ?? [])));
-      default:
-        return of(this.filteredNames());
-    }
+  private fetchSearchNames(filters: SearchFilters): Observable<string[]> {
+    const nameQuery = filters.name.trim().toLowerCase();
+    const typeRequests = filters.types.map((type) =>
+      this.api
+        .getTypeByName(type)
+        .pipe(map((dto) => this.uniqueNames(dto.pokemon?.map((entry) => entry.pokemon.name) ?? [])))
+    );
+    const abilityRequests = filters.abilities.map((ability) =>
+      this.api
+        .getAbilityByName(ability)
+        .pipe(map((dto) => this.uniqueNames(dto.pokemon?.map((entry) => entry.pokemon.name) ?? [])))
+    );
+    const moveRequests = filters.moves.map((move) =>
+      this.api
+        .getMoveByName(move)
+        .pipe(map((dto) => this.uniqueNames(dto.learned_by_pokemon?.map((entry) => entry.name) ?? [])))
+    );
+
+    return forkJoin({
+      types: typeRequests.length ? forkJoin(typeRequests) : of<string[][]>([]),
+      abilities: abilityRequests.length ? forkJoin(abilityRequests) : of<string[][]>([]),
+      moves: moveRequests.length ? forkJoin(moveRequests) : of<string[][]>([]),
+    }).pipe(
+      map(({ types, abilities, moves }) => {
+        const collections = [types, abilities, moves].filter((group) => group.length) as string[][][];
+
+        let pool: string[] | null = null;
+        collections.forEach((group) => {
+          const merged = this.uniqueNames(group.flat());
+          pool = pool === null ? merged : pool.filter((name) => merged.includes(name));
+        });
+
+        const basePool = pool ?? this.uniqueNames(this.allNames() ?? []);
+        const filteredByName = nameQuery ? basePool.filter((name) => name.includes(nameQuery)) : basePool;
+
+        return this.uniqueNames(filteredByName);
+      })
+    );
   }
 
   private fetchPokemonBatch(names: string[]): Observable<PokemonDTO[]> {
@@ -474,6 +520,48 @@ export class TeamFacade {
 
   private uniqueNames(names: string[]): string[] {
     return Array.from(new Set(names.map((name) => name.toLowerCase())));
+  }
+
+  private sortOptions(options: string[]): string[] {
+    return this.uniqueNames(options).sort((a, b) => a.localeCompare(b));
+  }
+
+  private normalizeFilters(filters: SearchFilters): SearchFilters {
+    const normalizeList = (list: string[]) => this.sortOptions(list.map((entry) => entry.trim()));
+
+    return {
+      name: filters.name.trim().toLowerCase(),
+      types: normalizeList(filters.types),
+      abilities: normalizeList(filters.abilities),
+      moves: normalizeList(filters.moves),
+    };
+  }
+
+  private areFiltersEqual(a: SearchFilters, b: SearchFilters): boolean {
+    return (
+      a.name === b.name &&
+      a.types.length === b.types.length &&
+      a.types.every((value, index) => value === b.types[index]) &&
+      a.abilities.length === b.abilities.length &&
+      a.abilities.every((value, index) => value === b.abilities[index]) &&
+      a.moves.length === b.moves.length &&
+      a.moves.every((value, index) => value === b.moves[index])
+    );
+  }
+
+  private hasSearchCriteria(filters: SearchFilters): boolean {
+    const hasExtraFilters =
+      filters.types.length > 0 || filters.abilities.length > 0 || filters.moves.length > 0;
+    return hasExtraFilters || filters.name.trim().length >= 2;
+  }
+
+  private computeHasActiveFilters(filters: SearchFilters): boolean {
+    return (
+      !!filters.name.trim().length ||
+      filters.types.length > 0 ||
+      filters.abilities.length > 0 ||
+      filters.moves.length > 0
+    );
   }
 
   private syncDraftMembers(members: PokemonVM[]) {

@@ -16,6 +16,24 @@ export class PokemonApi {
   private moveClient = new MoveClient();
   private itemClient = new ItemClient();
 
+  getAllTypeNames(): Observable<string[]> {
+    return from(this.pokemonClient.listTypes(0, 500)).pipe(
+      map((response) => response.results?.map((type) => type.name) ?? [])
+    );
+  }
+
+  getAllAbilityNames(): Observable<string[]> {
+    return from(this.pokemonClient.listAbilities(0, 500)).pipe(
+      map((response) => response.results?.map((ability) => ability.name) ?? [])
+    );
+  }
+
+  getAllMoveNames(): Observable<string[]> {
+    return from(this.moveClient.listMoves(0, 2000)).pipe(
+      map((response) => response.results?.map((move) => move.name) ?? [])
+    );
+  }
+
   getAbilityByName(name: string): Observable<AbilityDTO> {
     return from(this.pokemonClient.getAbilityByName(name.toLowerCase()));
   }

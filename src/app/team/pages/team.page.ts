@@ -7,8 +7,7 @@ import { ExportTeamModalComponent } from '../ui/modals/export-team-modal/export-
 import { ImportTeamModalComponent } from '../ui/modals/import-team-modal/import-team-modal.component';
 import { TeamWeaknessModalComponent } from '../ui/modals/team-weakness-modal/team-weakness-modal.component';
 import { WeaknessTable } from '../ui/modals/team-weakness-modal/weakness-table.model';
-import { ResultsListComponent } from '../ui/results-list/results-list.component';
-import { SearchBoxComponent } from '../ui/search-box/search-box.component';
+import { SearchModalComponent } from '../ui/modals/search-modal/search-modal.component';
 import { TeamPanelComponent } from '../ui/team-panel/team-panel.component';
 
 @Component({
@@ -16,8 +15,7 @@ import { TeamPanelComponent } from '../ui/team-panel/team-panel.component';
   selector: 'app-team-page',
   imports: [
     FormsModule,
-    SearchBoxComponent,
-    ResultsListComponent,
+    SearchModalComponent,
     TeamPanelComponent,
     ImportTeamModalComponent,
     ExportTeamModalComponent,
@@ -33,6 +31,7 @@ export class TeamPage {
   showImportModal = false;
   showExportModal = false;
   showWeaknessModal = false;
+  showSearchModal = false;
   exportText = '';
   importText = '';
   importError: string | null = null;
@@ -77,6 +76,14 @@ export class TeamPage {
 
   closeWeaknessDialog() {
     this.showWeaknessModal = false;
+  }
+
+  openSearchDialog() {
+    this.showSearchModal = true;
+  }
+
+  closeSearchDialog() {
+    this.showSearchModal = false;
   }
 
   toggleTeraType(pokemonId: string) {
