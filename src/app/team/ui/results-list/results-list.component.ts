@@ -12,9 +12,23 @@ import { PokemonVM } from '../../models/view.model';
 })
 export class ResultsListComponent {
   @Input() results: PokemonVM[] = [];
+  @Input() hasMore = false;
   @Output() add = new EventEmitter<PokemonVM>();
+  @Output() loadMore = new EventEmitter<void>();
 
   trackById(_i: number, p: PokemonVM) {
     return p.id;
+  }
+
+  onScroll(event: Event) {
+    if (!this.hasMore) return;
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const threshold = 100;
+    const isNearBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - threshold;
+    if (isNearBottom) {
+      this.loadMore.emit();
+    }
   }
 }

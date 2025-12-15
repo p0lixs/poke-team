@@ -19,6 +19,7 @@ import {
 } from '../models/view.model';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
+  Observable,
   catchError,
   combineLatest,
   debounceTime,
@@ -29,7 +30,6 @@ import {
   of,
   switchMap,
   take,
-  tap,
 } from 'rxjs';
 import { PokemonDTO } from '../models/pokeapi.dto';
 import { TeamRepository } from './team.repository';
@@ -75,12 +75,18 @@ export class TeamFacade {
     const q = this.query().trim().toLowerCase();
     const all = this.allNames();
     if (!q || !all) return [] as string[];
-    return all.filter((n) => n.includes(q)).slice(0, 20);
+    return all.filter((n) => n.includes(q));
   });
 
   readonly results = signal<PokemonVM[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly hasMoreResults = computed(() => this.nextOffset() < this.pendingNames().length);
+  private readonly pendingNames = signal<string[]>([]);
+  private readonly nextOffset = signal(0);
+  private readonly isFetchingMore = signal(false);
+  private readonly activeSearchId = signal(0);
+  private searchRunId = 0;
 
   // --- Team state ---
   readonly team = signal<PokemonVM[]>([]);
@@ -208,35 +214,80 @@ export class TeamFacade {
     ])
       .pipe(
         switchMap(([query, mode]) => {
+          const searchId = ++this.searchRunId;
+          this.activeSearchId.set(searchId);
+          this.resetSearchState();
+
           if (query.length < 2) {
             this.loading.set(false);
-            this.results.set([]);
-            return of<PokemonDTO[]>([]);
+            return of<{ names: string[]; searchId: number }>({ names: [], searchId });
           }
 
           this.loading.set(true);
-          this.error.set(null);
-          this.results.set([]);
-
-          return this.searchPokemon(query, mode).pipe(
+          return this.fetchSearchNames(query, mode).pipe(
+            map((names) => ({ names, searchId })),
             catchError((err) => {
               console.error(err);
               this.error.set('Search error');
               this.loading.set(false);
-              return of<PokemonDTO[]>([]);
+              return of<{ names: string[]; searchId: number }>({ names: [], searchId });
             })
           );
         })
       )
-      .subscribe((dtos: PokemonDTO[]) => {
-        const list = Array.isArray(dtos) ? dtos.map((dto) => this.mapper.toVM(dto)) : [];
-        this.results.set(list);
-        this.loading.set(false);
+      .subscribe(({ names, searchId }) => {
+        if (searchId !== this.activeSearchId()) return;
+        this.pendingNames.set(names);
+        if (!names.length) {
+          this.loading.set(false);
+          return;
+        }
+
+        this.loadMoreResults(searchId);
       });
   }
 
   setSearchMode(mode: SearchMode) {
     this.searchMode.set(mode);
+  }
+
+  loadMoreResults(searchId = this.activeSearchId()) {
+    if (this.isFetchingMore() || searchId !== this.activeSearchId()) return;
+
+    const names = this.pendingNames();
+    const offset = this.nextOffset();
+    if (offset >= names.length) {
+      this.loading.set(false);
+      return;
+    }
+
+    const batch = names.slice(offset, offset + 20);
+    this.isFetchingMore.set(true);
+    this.loading.set(true);
+
+    this.fetchPokemonBatch(batch)
+      .pipe(take(1))
+      .subscribe({
+        next: (dtos) => {
+          if (searchId !== this.activeSearchId()) return;
+
+          const list = Array.isArray(dtos) ? dtos.map((dto) => this.mapper.toVM(dto)) : [];
+          this.results.update((current) => [...current, ...list]);
+          this.nextOffset.update((value) => value + batch.length);
+        },
+        error: (err) => {
+          if (searchId !== this.activeSearchId()) return;
+          console.error(err);
+          this.error.set('Search error');
+          this.isFetchingMore.set(false);
+          this.loading.set(false);
+        },
+        complete: () => {
+          if (searchId !== this.activeSearchId()) return;
+          this.isFetchingMore.set(false);
+          this.loading.set(false);
+        },
+      });
   }
 
   async addToTeam(p: PokemonVM) {
@@ -388,38 +439,37 @@ export class TeamFacade {
     }
   }
 
-  private searchPokemon(query: string, mode: SearchMode): Observable<PokemonDTO[]> {
+  private fetchSearchNames(query: string, mode: SearchMode): Observable<string[]> {
     switch (mode) {
       case 'type':
-        return this.api.getTypeByName(query).pipe(
-          map((dto) => dto.pokemon?.map((entry) => entry.pokemon.name) ?? []),
-          map((names) => this.uniqueNames(names)),
-          switchMap((names) => this.loadPokemonDetails(names))
-        );
+        return this.api
+          .getTypeByName(query)
+          .pipe(map((dto) => this.uniqueNames(dto.pokemon?.map((entry) => entry.pokemon.name) ?? [])));
       case 'ability':
-        return this.api.getAbilityByName(query).pipe(
-          map((dto) => dto.pokemon?.map((entry) => entry.pokemon.name) ?? []),
-          map((names) => this.uniqueNames(names)),
-          switchMap((names) => this.loadPokemonDetails(names))
-        );
+        return this.api
+          .getAbilityByName(query)
+          .pipe(map((dto) => this.uniqueNames(dto.pokemon?.map((entry) => entry.pokemon.name) ?? [])));
       case 'move':
-        return this.api.getMoveByName(query).pipe(
-          map((dto) => dto.learned_by_pokemon?.map((entry) => entry.name) ?? []),
-          map((names) => this.uniqueNames(names)),
-          switchMap((names) => this.loadPokemonDetails(names))
-        );
+        return this.api
+          .getMoveByName(query)
+          .pipe(map((dto) => this.uniqueNames(dto.learned_by_pokemon?.map((entry) => entry.name) ?? [])));
       default:
-        const candidates = this.filteredNames();
-        if (!candidates.length) return of<PokemonDTO[]>([]);
-        return this.loadPokemonDetails(candidates);
+        return of(this.filteredNames());
     }
   }
 
-  private loadPokemonDetails(names: string[], limit = 20): Observable<PokemonDTO[]> {
-    const limited = names.slice(0, limit);
-    if (!limited.length) return of<PokemonDTO[]>([]);
+  private fetchPokemonBatch(names: string[]): Observable<PokemonDTO[]> {
+    if (!names.length) return of<PokemonDTO[]>([]);
 
-    return forkJoin(limited.map((name) => this.api.getPokemonByName(name).pipe(take(1))));
+    return forkJoin(names.map((name) => this.api.getPokemonByName(name).pipe(take(1))));
+  }
+
+  private resetSearchState() {
+    this.results.set([]);
+    this.pendingNames.set([]);
+    this.nextOffset.set(0);
+    this.error.set(null);
+    this.isFetchingMore.set(false);
   }
 
   private uniqueNames(names: string[]): string[] {

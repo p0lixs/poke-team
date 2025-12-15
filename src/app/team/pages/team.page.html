@@ -2,7 +2,8 @@
     <section>
         <app-search-box (valueChange)="facade.query.set($event)" (modeChange)="facade.setSearchMode($event)"></app-search-box>
         @if(facade.results().length > 0){
-        <app-results-list [results]="facade.results()" (add)="facade.addToTeam($event)" />
+        <app-results-list [results]="facade.results()" [hasMore]="facade.hasMoreResults()"
+          (add)="facade.addToTeam($event)" (loadMore)="facade.loadMoreResults()" />
         }
         @if(facade.loading()){
         <div class="muted" style="margin:.75rem 0">Searching...</div>

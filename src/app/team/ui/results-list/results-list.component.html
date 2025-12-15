@@ -1,4 +1,4 @@
-<div class="results">
+<div class="results" (scroll)="onScroll($event)">
   @for (p of results; track trackById($index, p)) {
   <article class="result">
     <div class="left">
