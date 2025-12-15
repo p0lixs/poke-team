@@ -184,7 +184,7 @@ export class PokemonComponent {
     this.remove.emit(this.pokemon.id);
   }
 
-  // 2) en openMoveModal(), reinicia el flag y enfoca una vez
+  // 2) In openMoveModal(), reset the flag and focus once
   openMoveModal() {
     if (this.moveModalPreparationSub) {
       this.moveModalPreparationSub.unsubscribe();
@@ -193,13 +193,13 @@ export class PokemonComponent {
 
     this.pendingSelection = this.pokemon.selectedMoves.map((m) => (m ? { ...m } : null));
     this.moveSearchTerm = '';
-    this.hasFocusedMoveSearch = false; // <<--- importante
+    this.hasFocusedMoveSearch = false; // <<--- important
 
     this.moveModalPreparationSub = this.ensureAllMoveDetailsLoaded().subscribe({
       next: () => {
         this.isMoveModalOpen = true;
         this.initializeMoveTableRows();
-        this.focusMoveSearchInput(); // <<--- enfocamos aquí una única vez
+        this.focusMoveSearchInput(); // <<--- focus here only once
       },
       complete: () => {
         this.moveModalPreparationSub = null;

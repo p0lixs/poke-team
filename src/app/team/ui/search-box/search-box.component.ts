@@ -13,13 +13,13 @@ export class SearchBoxComponent {
   readonly placeholder = computed(() => {
     switch (this.mode()) {
       case 'type':
-        return 'Busca por tipo (fuego, agua...)';
+        return 'Search by type (fire, water...)';
       case 'ability':
-        return 'Busca por habilidad (levitate, overgrow...)';
+        return 'Search by ability (levitate, overgrow...)';
       case 'move':
-        return 'Busca por movimiento (flamethrower, surf...)';
+        return 'Search by move (flamethrower, surf...)';
       default:
-        return 'Busca Pokémon por nombre...';
+        return 'Search Pokémon by name...';
     }
   });
   @Output() valueChange = new EventEmitter<string>();

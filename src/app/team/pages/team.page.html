@@ -2,34 +2,34 @@
     <section class="search-panel">
         <div class="search-panel__header">
             <div>
-                <p class="eyebrow">Buscador avanzado</p>
-                <h2>Combina filtros de Pokédex</h2>
-                <p class="muted">Busca por nombre, tipos, habilidades y movimientos en un modal dedicado.</p>
+                <p class="eyebrow">Advanced search</p>
+                <h2>Combine Pokédex filters</h2>
+                <p class="muted">Search by name, types, abilities, and moves in a dedicated modal.</p>
             </div>
-            <button type="button" class="primary" (click)="openSearchDialog()">Abrir búsqueda</button>
+            <button type="button" class="primary" (click)="openSearchDialog()">Open search</button>
         </div>
 
         @if (facade.hasActiveFilters()) {
         <div class="active-filters">
-            <p class="muted">Filtros activos</p>
+            <p class="muted">Active filters</p>
             <div class="tag-grid">
                 @for (type of facade.searchFilters().types; track type) {
-                <span class="tag">Tipo: {{ type }}</span>
+                <span class="tag">Type: {{ type }}</span>
                 }
                 @for (ability of facade.searchFilters().abilities; track ability) {
-                <span class="tag">Habilidad: {{ ability }}</span>
+                <span class="tag">Ability: {{ ability }}</span>
                 }
                 @for (move of facade.searchFilters().moves; track move) {
-                <span class="tag">Movimiento: {{ move }}</span>
+                <span class="tag">Move: {{ move }}</span>
                 }
                 @if (facade.searchFilters().name) {
-                <span class="tag">Nombre: "{{ facade.searchFilters().name }}"</span>
+                <span class="tag">Name: "{{ facade.searchFilters().name }}"</span>
                 }
             </div>
-            <p class="muted small">Los filtros se combinan: tipos + habilidades + movimientos.</p>
+            <p class="muted small">Filters stack together: types + abilities + moves.</p>
         </div>
         } @else {
-        <p class="muted">Abre el modal para añadir filtros y encontrar Pokémon específicos.</p>
+        <p class="muted">Open the modal to add filters and find specific Pokémon.</p>
         }
     </section>
 
