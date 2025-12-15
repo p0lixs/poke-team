@@ -1,13 +1,24 @@
 import { Injectable } from '@angular/core';
 import { ItemClient, MoveClient, PokemonClient } from 'pokenode-ts';
 import { Observable, forkJoin, from, map, of, switchMap, throwError } from 'rxjs';
-import { MoveDTO, NamedAPIResource, NatureDTO, PokemonDTO } from '../models/pokeapi.dto';
+import {
+  AbilityDTO,
+  MoveDTO,
+  NamedAPIResource,
+  NatureDTO,
+  PokemonDTO,
+  TypeDTO,
+} from '../models/pokeapi.dto';
 
 @Injectable({ providedIn: 'root' })
 export class PokemonApi {
   private pokemonClient = new PokemonClient();
   private moveClient = new MoveClient();
   private itemClient = new ItemClient();
+
+  getAbilityByName(name: string): Observable<AbilityDTO> {
+    return from(this.pokemonClient.getAbilityByName(name.toLowerCase()));
+  }
 
   getAllNames(): Observable<string[]> {
     // PokeAPI doesn't offer substring search; pull all names once (cached by facade)
@@ -31,6 +42,10 @@ export class PokemonApi {
       : from(this.moveClient.getMoveByName(identifier));
   }
 
+  getMoveByName(name: string): Observable<MoveDTO> {
+    return from(this.moveClient.getMoveByName(name.toLowerCase()));
+  }
+
   getAllItems(): Observable<NamedAPIResource[]> {
     return from(this.itemClient.listItems(0, 2000)).pipe(map((response) => response.results ?? []));
   }
@@ -52,6 +67,10 @@ export class PokemonApi {
         );
       })
     );
+  }
+
+  getTypeByName(name: string): Observable<TypeDTO> {
+    return from(this.pokemonClient.getTypeByName(name.toLowerCase()));
   }
 
   private extractResourceIdentifier(url: string): string | number | null {
